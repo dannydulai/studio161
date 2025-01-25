@@ -17,6 +17,14 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       home: const HomePage(),
+      builder: (context, child) {
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(
+            size: const Size(640, 480),
+          ),
+          child: child!,
+        );
+      },
     );
   }
 }
