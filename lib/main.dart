@@ -2,9 +2,15 @@
 
 import 'package:flutter/material.dart';
 
+import 'wing_bridge.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 //  await DesktopWindow.setWindowSize(Size(1000,40));
+  
+  // Initialize the Wing bridge
+  WingBridge.initialize();
+  
   runApp(const MyApp());
 }
 

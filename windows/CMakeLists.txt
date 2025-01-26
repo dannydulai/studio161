@@ -53,9 +53,15 @@ add_subdirectory(${FLUTTER_MANAGED_DIR})
 add_subdirectory("runner")
 
 
+# Link with libwing
+link_directories(${CMAKE_SOURCE_DIR}/../libwing)
+find_library(WING_LIB wing)
+
 # Generated plugin build rules, which manage building the plugins and adding
 # them to the application.
 include(flutter/generated_plugins.cmake)
+
+target_link_libraries(${BINARY_NAME} PRIVATE ${WING_LIB})
 
 
 # === Installation ===
