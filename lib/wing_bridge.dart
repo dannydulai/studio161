@@ -22,21 +22,21 @@ class WingBridge {
 
   static List<WingDiscoveryInfo> discover({bool stopOnFirst = false}) {
     final maxCount = 10;
-    final array = ffi.calloc<WingDiscoveryInfo>(maxCount);
+    final array = ffi.malloc<WingDiscoveryInfo>(maxCount);
     try {
-      final count = _bindings.discover(array, maxCount, stopOnFirst ? 1 : 0);
+      final count = _bindings.discover(array, ffi.sizeOf<ffi.Size>(), stopOnFirst ? ffi.Int32(1) : ffi.Int32(0));
       return List.generate(count, (i) => array[i]);
     } finally {
-      ffi.calloc.free(array);
+      ffi.malloc.free(array);
     }
   }
 
   static void connect(String ip) {
-    final ipNative = ip.toNativeUtf8();
+    final ipNative = ip.toNativeUtf8(allocator: ffi.malloc);
     try {
       _console = _bindings.connect(ipNative);
     } finally {
-      ffi.calloc.free(ipNative);
+      ffi.malloc.free(ipNative);
     }
   }
 
@@ -49,19 +49,19 @@ class WingBridge {
   }
 
   static void setString(int id, String value) {
-    final valueNative = value.toNativeUtf8();
+    final valueNative = value.toNativeUtf8(allocator: ffi.malloc);
     try {
-      _bindings.setString(_console, id, valueNative);
+      _bindings.setString(_console, ffi.Uint32(id), valueNative);
     } finally {
-      ffi.calloc.free(valueNative);
+      ffi.malloc.free(valueNative);
     }
   }
 
   static void setFloat(int id, double value) {
-    _bindings.setFloat(_console, id, value);
+    _bindings.setFloat(_console, ffi.Uint32(id), value);
   }
 
   static void setInt(int id, int value) {
-    _bindings.setInt(_console, id, value);
+    _bindings.setInt(_console, ffi.Uint32(id), ffi.Int32(value));
   }
 }

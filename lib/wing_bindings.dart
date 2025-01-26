@@ -31,21 +31,21 @@ enum NodeUnit {
 }
 
 // Discovery Info struct
-class WingDiscoveryInfo extends ffi.Struct {
-  @ffi.Array(64)
-  external Array<ffi.Int8> ip;
+base class WingDiscoveryInfo extends ffi.Struct {
+  @ffi.Array.multi([64])
+  external ffi.Array<ffi.Int8> ip;
 
-  @ffi.Array(64)
-  external Array<ffi.Int8> name;
+  @ffi.Array.multi([64])
+  external ffi.Array<ffi.Int8> name;
 
-  @ffi.Array(64)
-  external Array<ffi.Int8> model;
+  @ffi.Array.multi([64])
+  external ffi.Array<ffi.Int8> model;
 
-  @ffi.Array(64)
-  external Array<ffi.Int8> serial;
+  @ffi.Array.multi([64])
+  external ffi.Array<ffi.Int8> serial;
 
-  @ffi.Array(64)
-  external Array<ffi.Int8> firmware;
+  @ffi.Array.multi([64])
+  external ffi.Array<ffi.Int8> firmware;
 }
 
 // Opaque types
