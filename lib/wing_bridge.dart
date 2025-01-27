@@ -64,12 +64,30 @@ class NodeDefinition {
     final Pointer<NativeNodeDefinition> _p;
 
     NodeDefinition(this._p);
+
+    int get id => _bindings.wingNodeDefGetId(_p);
+    NodeType get type => NodeType.values[_bindings.wingNodeDefGetType(_p)];
+    NodeUnit get unit => NodeUnit.values[_bindings.wingNodeDefGetUnit(_p)];
+    String get name => _bindings.wingNodeDefGetName(_p).toDartString();
+    String get path => _bindings.wingNodeDefGetPath(_p).toDartString();
+    double get min => _bindings.wingNodeDefGetMin(_p);
+    double get max => _bindings.wingNodeDefGetMax(_p);
+    double get defaultValue => _bindings.wingNodeDefGetDefault(_p);
+    int get enumCount => _bindings.wingNodeDefGetEnumCount(_p);
+    
+    String getEnumName(int index) => _bindings.wingNodeDefGetEnumName(_p, index).toDartString();
+    double getEnumValue(int index) => _bindings.wingNodeDefGetEnumValue(_p, index);
 }
 
 class NodeData {
     final Pointer<NativeNodeData> _p;
 
     NodeData(this._p);
+
+    NodeType get type => NodeType.values[_bindings.wingNodeDataGetType(_p)];
+    double get floatValue => _bindings.wingNodeDataGetFloat(_p);
+    int get intValue => _bindings.wingNodeDataGetInt(_p);
+    String get stringValue => _bindings.wingNodeDataGetString(_p).toDartString();
 }
 
 class WingConsole {

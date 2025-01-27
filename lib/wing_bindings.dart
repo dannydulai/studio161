@@ -172,5 +172,65 @@ class WingBindings {
                 Pointer<NativeFunction<WingNodeDataCallback>>,
                 Pointer<Void>
             )>('wing_console_set_node_data_callback');
+
+        wingNodeDefGetId = _lib.lookupFunction<
+            Uint32 Function(Pointer<NativeNodeDefinition>),
+            int Function(Pointer<NativeNodeDefinition>)>('wing_node_def_get_id');
+
+        wingNodeDefGetType = _lib.lookupFunction<
+            Int32 Function(Pointer<NativeNodeDefinition>),
+            int Function(Pointer<NativeNodeDefinition>)>('wing_node_def_get_type');
+
+        wingNodeDefGetUnit = _lib.lookupFunction<
+            Int32 Function(Pointer<NativeNodeDefinition>),
+            int Function(Pointer<NativeNodeDefinition>)>('wing_node_def_get_unit');
+
+        wingNodeDefGetName = _lib.lookupFunction<
+            Pointer<Utf8> Function(Pointer<NativeNodeDefinition>),
+            Pointer<Utf8> Function(Pointer<NativeNodeDefinition>)>('wing_node_def_get_name');
+
+        wingNodeDefGetPath = _lib.lookupFunction<
+            Pointer<Utf8> Function(Pointer<NativeNodeDefinition>),
+            Pointer<Utf8> Function(Pointer<NativeNodeDefinition>)>('wing_node_def_get_path');
+
+        wingNodeDefGetMin = _lib.lookupFunction<
+            Double Function(Pointer<NativeNodeDefinition>),
+            double Function(Pointer<NativeNodeDefinition>)>('wing_node_def_get_min');
+
+        wingNodeDefGetMax = _lib.lookupFunction<
+            Double Function(Pointer<NativeNodeDefinition>),
+            double Function(Pointer<NativeNodeDefinition>)>('wing_node_def_get_max');
+
+        wingNodeDefGetDefault = _lib.lookupFunction<
+            Double Function(Pointer<NativeNodeDefinition>),
+            double Function(Pointer<NativeNodeDefinition>)>('wing_node_def_get_default');
+
+        wingNodeDefGetEnumCount = _lib.lookupFunction<
+            Int32 Function(Pointer<NativeNodeDefinition>),
+            int Function(Pointer<NativeNodeDefinition>)>('wing_node_def_get_enum_count');
+
+        wingNodeDefGetEnumName = _lib.lookupFunction<
+            Pointer<Utf8> Function(Pointer<NativeNodeDefinition>, Int32),
+            Pointer<Utf8> Function(Pointer<NativeNodeDefinition>, int)>('wing_node_def_get_enum_name');
+
+        wingNodeDefGetEnumValue = _lib.lookupFunction<
+            Double Function(Pointer<NativeNodeDefinition>, Int32),
+            double Function(Pointer<NativeNodeDefinition>, int)>('wing_node_def_get_enum_value');
+
+        wingNodeDataGetType = _lib.lookupFunction<
+            Int32 Function(Pointer<NativeNodeData>),
+            int Function(Pointer<NativeNodeData>)>('wing_node_data_get_type');
+
+        wingNodeDataGetFloat = _lib.lookupFunction<
+            Double Function(Pointer<NativeNodeData>),
+            double Function(Pointer<NativeNodeData>)>('wing_node_data_get_float');
+
+        wingNodeDataGetInt = _lib.lookupFunction<
+            Int32 Function(Pointer<NativeNodeData>),
+            int Function(Pointer<NativeNodeData>)>('wing_node_data_get_int');
+
+        wingNodeDataGetString = _lib.lookupFunction<
+            Pointer<Utf8> Function(Pointer<NativeNodeData>),
+            Pointer<Utf8> Function(Pointer<NativeNodeData>)>('wing_node_data_get_string');
     }
 }
