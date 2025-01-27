@@ -92,7 +92,19 @@ class NodeData {
 
     double get floatValue => _bindings.wingNodeDataGetFloat(_p);
     int    get intValue => _bindings.wingNodeDataGetInt(_p);
-    String get stringValue => _bindings.wingNodeDataGetString(_p).toDartString();
+    String get stringValue {
+        final int bufferSize = 1024; // Reasonable default size
+        final Pointer<Utf8> buffer = malloc<Uint8>(bufferSize).cast<Utf8>();
+        try {
+            final int result = _bindings.wingNodeDataGetString(_p, buffer, bufferSize);
+            if (result < 0) {
+                throw Exception('Failed to get string value');
+            }
+            return buffer.toDartString();
+        } finally {
+            malloc.free(buffer);
+        }
+    }
 }
 
 class WingConsole {

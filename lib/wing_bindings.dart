@@ -251,8 +251,8 @@ class WingBindings {
             int Function(Pointer<NativeNodeData>)>('wing_node_data_get_int');
 
         wingNodeDataGetString = _lib.lookupFunction<
-            Pointer<Utf8> Function(Pointer<NativeNodeData>),
-            Pointer<Utf8> Function(Pointer<NativeNodeData>)>('wing_node_data_get_string');
+            Int32 Function(Pointer<NativeNodeData>, Pointer<Utf8>, Size),
+            int Function(Pointer<NativeNodeData>, Pointer<Utf8>, int)>('wing_node_data_get_string');
 
         wingNodeDataHasString = _lib.lookupFunction<
             Int32 Function(Pointer<NativeNodeData>),
