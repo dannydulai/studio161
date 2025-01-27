@@ -60,6 +60,25 @@ class WingBindings {
     late final void Function(Pointer<NativeWingConsole> console, int id, Pointer<Utf8> value) consoleSetString;
     late final void Function(Pointer<NativeWingConsole> console, int id, double value) consoleSetFloat;
     late final void Function(Pointer<NativeWingConsole> console, int id, int value) consoleSetInt;
+    
+    // Callback setters
+    late final void Function(
+        Pointer<NativeWingConsole> console,
+        Pointer<NativeFunction<WingRequestEndCallback>> callback,
+        Pointer<Void> userData
+    ) consoleSetRequestEndCallback;
+
+    late final void Function(
+        Pointer<NativeWingConsole> console,
+        Pointer<NativeFunction<WingNodeDefinitionCallback>> callback,
+        Pointer<Void> userData
+    ) consoleSetNodeDefinitionCallback;
+
+    late final void Function(
+        Pointer<NativeWingConsole> console,
+        Pointer<NativeFunction<WingNodeDataCallback>> callback,
+        Pointer<Void> userData
+    ) consoleSetNodeDataCallback;
 
     WingBindings(this._lib) {
         discoverScan = _lib.lookupFunction<
@@ -117,5 +136,41 @@ class WingBindings {
         consoleSetInt = _lib.lookupFunction<
             Void Function(Pointer<NativeWingConsole>, Uint32, Int32),
             void Function(Pointer<NativeWingConsole>, int, int)>('wing_console_set_int');
+
+        consoleSetRequestEndCallback = _lib.lookupFunction<
+            Void Function(
+                Pointer<NativeWingConsole>,
+                Pointer<NativeFunction<WingRequestEndCallback>>,
+                Pointer<Void>
+            ),
+            void Function(
+                Pointer<NativeWingConsole>,
+                Pointer<NativeFunction<WingRequestEndCallback>>,
+                Pointer<Void>
+            )>('wing_console_set_request_end_callback');
+
+        consoleSetNodeDefinitionCallback = _lib.lookupFunction<
+            Void Function(
+                Pointer<NativeWingConsole>,
+                Pointer<NativeFunction<WingNodeDefinitionCallback>>,
+                Pointer<Void>
+            ),
+            void Function(
+                Pointer<NativeWingConsole>,
+                Pointer<NativeFunction<WingNodeDefinitionCallback>>,
+                Pointer<Void>
+            )>('wing_console_set_node_definition_callback');
+
+        consoleSetNodeDataCallback = _lib.lookupFunction<
+            Void Function(
+                Pointer<NativeWingConsole>,
+                Pointer<NativeFunction<WingNodeDataCallback>>,
+                Pointer<Void>
+            ),
+            void Function(
+                Pointer<NativeWingConsole>,
+                Pointer<NativeFunction<WingNodeDataCallback>>,
+                Pointer<Void>
+            )>('wing_console_set_node_data_callback');
     }
 }
