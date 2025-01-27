@@ -97,6 +97,9 @@ class WingBindings {
     late final double Function(Pointer<NativeNodeData>) wingNodeDataGetFloat;
     late final int Function(Pointer<NativeNodeData>) wingNodeDataGetInt;
     late final Pointer<Utf8> Function(Pointer<NativeNodeData>) wingNodeDataGetString;
+    late final int Function(Pointer<NativeNodeData>) wingNodeDataHasString;
+    late final int Function(Pointer<NativeNodeData>) wingNodeDataHasFloat;
+    late final int Function(Pointer<NativeNodeData>) wingNodeDataHasInt;
 
     WingBindings(this._lib) {
         discoverScan = _lib.lookupFunction<
@@ -250,5 +253,17 @@ class WingBindings {
         wingNodeDataGetString = _lib.lookupFunction<
             Pointer<Utf8> Function(Pointer<NativeNodeData>),
             Pointer<Utf8> Function(Pointer<NativeNodeData>)>('wing_node_data_get_string');
+
+        wingNodeDataHasString = _lib.lookupFunction<
+            Int32 Function(Pointer<NativeNodeData>),
+            int Function(Pointer<NativeNodeData>)>('wing_node_data_has_string');
+
+        wingNodeDataHasFloat = _lib.lookupFunction<
+            Int32 Function(Pointer<NativeNodeData>),
+            int Function(Pointer<NativeNodeData>)>('wing_node_data_has_float');
+
+        wingNodeDataHasInt = _lib.lookupFunction<
+            Int32 Function(Pointer<NativeNodeData>),
+            int Function(Pointer<NativeNodeData>)>('wing_node_data_has_int');
     }
 }

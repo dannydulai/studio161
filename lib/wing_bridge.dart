@@ -88,6 +88,10 @@ class NodeData {
     double get floatValue => _bindings.wingNodeDataGetFloat(_p);
     int get intValue => _bindings.wingNodeDataGetInt(_p);
     String get stringValue => _bindings.wingNodeDataGetString(_p).toDartString();
+    
+    bool get hasString => _bindings.wingNodeDataHasString(_p) != 0;
+    bool get hasFloat => _bindings.wingNodeDataHasFloat(_p) != 0;
+    bool get hasInt => _bindings.wingNodeDataHasInt(_p) != 0;
 }
 
 class WingConsole {
