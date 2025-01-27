@@ -1,16 +1,189 @@
 // ignore_for_file: avoid_print
 
-import 'package:flutter/material.dart';
+import "dart:convert";
+import "dart:io";
+import "package:flutter/material.dart";
 
-import 'wing_bridge.dart';
+import "wing_bridge.dart";
+import "hexcolor.dart";
+import "buttons.dart";
+import "let.dart";
+
+WingConsole? c;
+Map<String, dynamic> config = {};
+
+typedef JList = List<dynamic>;
+typedef JMap = Map<String, dynamic>;
+
+class MixerOutput {
+  final String id;
+  final String name;
+  final Color color;
+  final int bus;
+  final int wingPropLevel;
+  final int wingPropMute;
+
+  double level = 0.0;
+  bool enabled = false;
+
+  final Map<String, MixerOutputSource> sources = {};
+
+  MixerOutput._({
+      required this.id,
+      required this.name,
+      required this.color,
+      required this.bus,
+      required this.wingPropLevel,
+      required this.wingPropMute,
+      });
+
+  factory MixerOutput.fromJson(Map<String, dynamic> json) {
+    return MixerOutput._(
+        id: json["id"],
+        name: json["name"],
+        color: HexColor.fromHex(json["color"]),
+        bus: json["bus"],
+        wingPropLevel: WingConsole.nodeNameToId("/bus/${json["bus"]}/fdr"),
+        wingPropMute: WingConsole.nodeNameToId("/bus/${json["bus"]}/mute"),
+      );
+  }
+
+  void toggleEnabled() {
+    enabled = !enabled;
+    c!.setInt(wingPropMute, enabled ? 0 : 1);
+  }
+
+  void changeLevel(double val) {
+    if (level == -90 && val < 0) {
+      level = -144;
+    } else {
+      level += val;
+      level = level.clamp(-90.0, 10.0);
+    }
+    c!.setFloat(wingPropLevel, val);
+  }
+}
+
+class MixerOutputSource {
+  final MixerOutput output;
+  final MixerInput input;
+  final int wingPropLevel;
+  final int wingPropSend;
+
+  double level = 0.0;
+  bool enabled = false;
+
+  MixerOutputSource({
+      required this.output,
+      required this.input,
+      required this.wingPropLevel,
+      required this.wingPropSend,
+  });
+
+  void toggleEnabled() {
+    enabled = !enabled;
+    c!.setInt(wingPropSend, enabled ? 1 : 0);
+  }
+
+  void changeLevel(double val) {
+    if (level == -90 && val < 0) {
+      level = -144;
+    } else {
+      level += val;
+      level = level.clamp(-90.0, 10.0);
+    }
+    c!.setFloat(wingPropLevel, val);
+  }
+}
+
+class MixerInput {
+  final String id;
+  final String name;
+  final Color color;
+  final int channel;
+
+  MixerInput._({
+      required this.id,
+      required this.name,
+      required this.color,
+      required this.channel,
+      });
+
+  factory MixerInput.fromJson(Map<String, dynamic> json) {
+    return MixerInput._(
+      id: json["id"],
+      name: json["name"],
+      color: HexColor.fromHex(json["color"]),
+      channel: json["channel"] as int,
+    );
+  }
+}
+
+Map<String, MixerOutput> mixerOutputs = {};
+Map<String, MixerInput> mixerInputs = {};
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-//  await DesktopWindow.setWindowSize(Size(1000,40));
-  
-  // Initialize the Wing bridge
-  WingBridge.initialize();
-  
+
+  var consoles = WingDiscover.scan();
+
+  for (final element in consoles) {
+    print("${element.name} @ ${element.ip} [${element.model}/${element.serial}/${element.firmware}]\n");
+  }
+
+  c = WingConsole.connect(consoles[0].ip);
+
+  c!.setNodeDataCallback((id, data) {
+    String name = WingConsole.nodeIdToName(id);
+    if (name == "") name = "<UnknownId:$id>";
+    print("flutter onData: $name: ${data.stringValue}");
+
+    for (final output in mixerOutputs.values) {
+      if (id == output.wingPropLevel) {
+        output.level = data.floatValue;
+      }
+      if (id == output.wingPropMute) {
+        output.enabled = data.intValue == 0;
+      }
+
+      for (final source in output.sources.values) {
+        if (id == source.wingPropLevel) {
+          source.level = data.floatValue;
+        }
+        if (id == source.wingPropSend) {
+          source.enabled = data.intValue != 0;
+        }
+      }
+    }
+  });
+
+  config = jsonDecode(await File("/Users/danny/work/studio161/config.json").readAsString());
+
+  (config["inputs"] as JList).map((input) => MixerInput.fromJson(input)).forEach((input) {
+    mixerInputs[input.id] = input;
+  });
+  (config["outputs"] as JList).map((output) => MixerOutput.fromJson(output)).forEach((output) {
+    mixerOutputs[output.id] = output;
+    for (final input in mixerInputs.values) {
+      output.sources[input.id] = MixerOutputSource(
+        output: output,
+        input: input,
+        wingPropLevel: WingConsole.nodeNameToId("/ch/${input.channel}/send/${output.bus}/lvl"),
+        wingPropSend: WingConsole.nodeNameToId("/ch/${input.channel}/send/${output.bus}/on")
+      );
+    }
+  });
+
+  for (final output in mixerOutputs.values) {
+    c!.requestNodeData(WingConsole.nodeNameToId("/bus/${output.bus}/fdr"));
+    c!.requestNodeData(WingConsole.nodeNameToId("/bus/${output.bus}/mute"));
+    for (final input in output.sources.values.map((source) => source.input)) {
+      c!.requestNodeData(WingConsole.nodeNameToId("/ch/${input.channel}/send/${output.bus}/on"));
+      c!.requestNodeData(WingConsole.nodeNameToId("/ch/${input.channel}/send/${output.bus}/lvl"));
+    }
+  }
+
+  c!.read();
   runApp(const MyApp());
 }
 
@@ -21,7 +194,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Studio161',
+      title: "Studio161",
       theme: ThemeData(
         useMaterial3: true,
       ),
@@ -49,69 +222,87 @@ class _MyHomePageState extends State<HomePage> {
   }
 }
 
-class MainBar extends StatelessWidget {
+class MainBar extends StatefulWidget {
   const MainBar({super.key});
+
+  @override
+  State<MainBar> createState() => _MainBarState();
+}
+
+class _MainBarState extends State<MainBar> {
+  int level = 0;
+  MixerOutput? selectedOutput;
+
+  List<Widget> level1() {
+    return mixerOutputs.values
+        .map((output) => ClickDragButton(
+              id: output.id,
+              color: output.color,
+              enabled: output.enabled,
+              level: output.level,
+              onTap: () {
+                selectedOutput = output;
+                level = 1;
+                setState(() { });
+              },
+              onDrag: (val) {
+                output.changeLevel(val);
+              },
+            ))
+        .toList();
+  }
+  List<Widget> level2() {
+    return selectedOutput!.let((output) => [
+        ClickDragButton(
+          id: "home",
+          color: HexColor.fromHex("#808080"),
+          onTap: () {
+            level = 0;
+            selectedOutput = null;
+            setState(() { });
+          },
+        ),
+        ClickDragButton(
+          id: selectedOutput!.id,
+          color: HexColor.fromHex("#ff0000"),
+          enabled: selectedOutput!.enabled,
+          level: selectedOutput!.level,
+          onTap: () {
+            selectedOutput!.toggleEnabled();
+          },
+          onDrag: (val) {
+            selectedOutput!.changeLevel(val);
+          },
+        ),
+        SizedBox(width: 10),
+        ...(selectedOutput!.sources.values
+          .map((source) =>
+            ClickDragButton(
+              id: source.input.id,
+              color: source.input.color,
+              enabled: source.enabled,
+              level: source.level,
+              onTap: () {
+                source.toggleEnabled();
+              },
+              onDrag: (val) {
+                source.changeLevel(val);
+              },
+            )).toList())
+      ]);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
       color: Colors.yellow,
       height: 80,
       child: Row(
-        children: [
-          ClickButton(),
-          ClickDragButton(value: 0.4),
-          ClickDragButton(value: 0.8),
-        ],
+        children:
+        iff(selectedOutput == null, level1)
+        .elseIf(level == 1, level2)
+        .orElse(() => [])!
       ),
-    );
-  }
-}
-
-class ClickButton extends StatelessWidget {
-  const ClickButton({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      child: const Icon(Icons.home),
-      onTap: () {
-        print('click');
-      },
-    );
-  }
-}
-
-class ClickDragButton extends StatefulWidget {
-  const ClickDragButton({super.key, this.value = 0.0});
-  final double value;
-  @override
-  State<ClickDragButton> createState() => _ClickDragButtonState();
-}
-
-class _ClickDragButtonState extends State<ClickDragButton> {
-  late double value = widget.value;
-
-  // @override
-  // void initState() {
-  //   super.initState();
-  //   value = widget.value;
-  // }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      child: const Icon(Icons.home),
-      onVerticalDragStart: (details) {
-        print('drag-Start'); print(details);
-      },
-      onVerticalDragUpdate: (details) {
-        print('drag-Update'); print(details);
-      },
-      onVerticalDragEnd: (details) {
-        print('drag-end'); print(details);
-      },
-      onTap: () {
-        print('tap');
-      },
     );
   }
 }
