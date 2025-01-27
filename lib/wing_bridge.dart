@@ -105,4 +105,43 @@ class WingConsole {
   void setInt(int id, int value) {
       _bindings.consoleSetInt(_console, id, value);
   }
+
+  // Callback storage
+  Pointer<NativeFunction<WingRequestEndCallback>>? _requestEndCallback;
+  Pointer<NativeFunction<WingNodeDefinitionCallback>>? _nodeDefinitionCallback;
+  Pointer<NativeFunction<WingNodeDataCallback>>? _nodeDataCallback;
+
+  // Callback setters
+  void setRequestEndCallback(void Function() callback) {
+    // Convert Dart function to native callback
+    _requestEndCallback = Pointer.fromFunction<WingRequestEndCallback>(
+      (Pointer<Void> userData) {
+        callback();
+      },
+    );
+    
+    _bindings.consoleSetRequestEndCallback(_console, _requestEndCallback!, nullptr);
+  }
+
+  void setNodeDefinitionCallback(void Function(Pointer<NativeNodeDefinition>) callback) {
+    // Convert Dart function to native callback
+    _nodeDefinitionCallback = Pointer.fromFunction<WingNodeDefinitionCallback>(
+      (Pointer<NativeNodeDefinition> def, Pointer<Void> userData) {
+        callback(def);
+      },
+    );
+    
+    _bindings.consoleSetNodeDefinitionCallback(_console, _nodeDefinitionCallback!, nullptr);
+  }
+
+  void setNodeDataCallback(void Function(int, Pointer<NativeNodeData>) callback) {
+    // Convert Dart function to native callback
+    _nodeDataCallback = Pointer.fromFunction<WingNodeDataCallback>(
+      (int id, Pointer<NativeNodeData> data, Pointer<Void> userData) {
+        callback(id, data);
+      },
+    );
+    
+    _bindings.consoleSetNodeDataCallback(_console, _nodeDataCallback!, nullptr);
+  }
 }
