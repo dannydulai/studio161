@@ -60,6 +60,18 @@ final DynamicLibrary _lib = switch (defaultTargetPlatform) {
 
 final WingBindings _bindings = WingBindings(_lib);
 
+class NodeDefinition {
+    final Pointer<NativeNodeDefinition> _p;
+
+    NodeDefinition(this._p);
+}
+
+class NodeData {
+    final Pointer<NativeNodeData> _p;
+
+    NodeData(this._p);
+}
+
 class WingConsole {
   final Pointer<NativeWingConsole> _console;
 
@@ -79,7 +91,7 @@ class WingConsole {
   }
 
   void _close() {
-  print("flutter _close");
+      print("flutter _close");
 
       _bindings.consoleDestroy(_console);
       _finalizer.detach(this);
@@ -123,22 +135,22 @@ class WingConsole {
     _bindings.consoleSetRequestEndCallback(_console, _requestEndCallback!, nullptr);
   }
 
-  void setNodeDefinitionCallback(void Function(Pointer<NativeNodeDefinition>) callback) {
+  void setNodeDefinitionCallback(void Function(NodeDefinition) callback) {
     // Convert Dart function to native callback
     _nodeDefinitionCallback = Pointer.fromFunction<WingNodeDefinitionCallback>(
       (Pointer<NativeNodeDefinition> def, Pointer<Void> userData) {
-        callback(def);
+        callback(NodeDefinition(def));
       },
     );
     
     _bindings.consoleSetNodeDefinitionCallback(_console, _nodeDefinitionCallback!, nullptr);
   }
 
-  void setNodeDataCallback(void Function(int, Pointer<NativeNodeData>) callback) {
+  void setNodeDataCallback(void Function(int, NodeData) callback) {
     // Convert Dart function to native callback
     _nodeDataCallback = Pointer.fromFunction<WingNodeDataCallback>(
       (int id, Pointer<NativeNodeData> data, Pointer<Void> userData) {
-        callback(id, data);
+        callback(id, NodeData(data));
       },
     );
     
