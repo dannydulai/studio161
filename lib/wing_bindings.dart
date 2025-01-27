@@ -1,126 +1,121 @@
-import 'dart:ffi' as ffi;
+import 'dart:ffi';
 import 'package:ffi/ffi.dart';
 
 // Enums
 enum NodeType {
-  node(0),
-  linearFloat(1),
-  logarithmicFloat(2),
-  faderLevel(3),
-  integer(4),
-  stringEnum(5),
-  floatEnum(6),
-  string(7);
+    node(0),
+    linearFloat(1),
+    logarithmicFloat(2),
+    faderLevel(3),
+    integer(4),
+    stringEnum(5),
+    floatEnum(6),
+    string(7);
 
-  final int value;
-  const NodeType(this.value);
+    final int value;
+    const NodeType(this.value);
 }
 
 enum NodeUnit {
-  none(0),
-  db(1),
-  percent(2),
-  milliseconds(3),
-  hertz(4),
-  meters(5),
-  seconds(6),
-  octaves(7);
+    none(0),
+    db(1),
+    percent(2),
+    milliseconds(3),
+    hertz(4),
+    meters(5),
+    seconds(6),
+    octaves(7);
 
-  final int value;
-  const NodeUnit(this.value);
-}
-
-// Discovery Info struct
-base class WingDiscoveryInfo extends ffi.Struct {
-  @ffi.Array.multi([64])
-  external ffi.Array<ffi.Int8> ip;
-
-  @ffi.Array.multi([64])
-  external ffi.Array<ffi.Int8> name;
-
-  @ffi.Array.multi([64])
-  external ffi.Array<ffi.Int8> model;
-
-  @ffi.Array.multi([64])
-  external ffi.Array<ffi.Int8> serial;
-
-  @ffi.Array.multi([64])
-  external ffi.Array<ffi.Int8> firmware;
+    final int value;
+    const NodeUnit(this.value);
 }
 
 // Opaque types
-final class WingConsole extends ffi.Opaque {}
-final class NodeData extends ffi.Opaque {}
-final class NodeDefinition extends ffi.Opaque {}
+final class NativeWingConsole extends Opaque {}
+final class NativeWingDiscover extends Opaque {}
+final class NativeNodeData extends Opaque {}
+final class NativeNodeDefinition extends Opaque {}
 
 // Callback typedefs
-typedef WingRequestEndCallback = ffi.Void Function(
-    ffi.Pointer<ffi.Void> userData);
-typedef WingNodeDefinitionCallback = ffi.Void Function(
-    ffi.Pointer<NodeDefinition> def, ffi.Pointer<ffi.Void> userData);
-typedef WingNodeDataCallback = ffi.Void Function(
-    ffi.Uint32 id, ffi.Pointer<NodeData> data, ffi.Pointer<ffi.Void> userData);
+typedef WingRequestEndCallback     = Void Function(Pointer<Void> userData);
+typedef WingNodeDefinitionCallback = Void Function(Pointer<NativeNodeDefinition> def, Pointer<Void> userData);
+typedef WingNodeDataCallback       = Void Function(Uint32 id, Pointer<NativeNodeData> data, Pointer<Void> userData);
 
 // Native function signatures
 class WingBindings {
-  final ffi.DynamicLibrary _lib;
+    final DynamicLibrary _lib;
 
-  WingBindings(this._lib) {
-    _initBindings();
-  }
+    late final Pointer<NativeWingDiscover> Function(int stopOnFirst) discoverScan;
+    late final void Function(Pointer<NativeWingDiscover>) discoverDestroy;
+    late final int Function(Pointer<NativeWingDiscover>) discoverCount;
+    late final Pointer<Utf8> Function(Pointer<NativeWingDiscover>, int) discoverGetIp;
+    late final Pointer<Utf8> Function(Pointer<NativeWingDiscover>, int) discoverGetName;
+    late final Pointer<Utf8> Function(Pointer<NativeWingDiscover>, int) discoverGetModel;
+    late final Pointer<Utf8> Function(Pointer<NativeWingDiscover>, int) discoverGetSerial;
+    late final Pointer<Utf8> Function(Pointer<NativeWingDiscover>, int) discoverGetFirmware;
 
-  late final int Function(ffi.Pointer<WingDiscoveryInfo> infoArray,
-      ffi.Size maxCount, ffi.Int32 stopOnFirst) discover;
-  
-  late final ffi.Pointer<WingConsole> Function(ffi.Pointer<ffi.Int8> ip) connect;
-  
-  late final void Function(ffi.Pointer<WingConsole> console) destroy;
-  
-  late final void Function(ffi.Pointer<WingConsole> console) read;
+    late final Pointer<NativeWingConsole> Function(Pointer<Utf8> ip) consoleConnect;
+    late final void Function(Pointer<NativeWingConsole> console) consoleDestroy;
+    late final void Function(Pointer<NativeWingConsole> console) consoleRead;
+    late final void Function(Pointer<NativeWingConsole> console, int id, Pointer<Utf8> value) consoleSetString;
+    late final void Function(Pointer<NativeWingConsole> console, int id, double value) consoleSetFloat;
+    late final void Function(Pointer<NativeWingConsole> console, int id, int value) consoleSetInt;
 
-  late final void Function(ffi.Pointer<WingConsole> console, ffi.Uint32 id,
-      ffi.Pointer<ffi.Int8> value) setString;
+    WingBindings(this._lib) {
+        discoverScan = _lib.lookupFunction<
+            Pointer<NativeWingDiscover> Function(Int32),
+            Pointer<NativeWingDiscover> Function(int)>('wing_discover_scan');
 
-  late final void Function(ffi.Pointer<WingConsole> console, ffi.Uint32 id,
-      double value) setFloat;
+        discoverDestroy = _lib.lookupFunction<
+            Void Function(Pointer<NativeWingDiscover>),
+            void Function(Pointer<NativeWingDiscover>)>('wing_discover_destroy');
 
-  late final void Function(ffi.Pointer<WingConsole> console, ffi.Uint32 id,
-      ffi.Int32 value) setInt;
+        discoverCount = _lib.lookupFunction<
+            Int32 Function(Pointer<NativeWingDiscover>),
+            int   Function(Pointer<NativeWingDiscover>)>('wing_discover_count');
 
-  void _initBindings() {
-    discover = _lib.lookupFunction<
-        ffi.Int32 Function(ffi.Pointer<WingDiscoveryInfo>, ffi.Size,
-            ffi.Int32),
-        int Function(ffi.Pointer<WingDiscoveryInfo>, ffi.Size,
-            ffi.Int32)>('wing_console_discover');
+        discoverGetIp = _lib.lookupFunction<
+            Pointer<Utf8> Function(Pointer<NativeWingDiscover>, Int32),
+            Pointer<Utf8> Function(Pointer<NativeWingDiscover>, int)>('wing_discover_get_ip');
 
-    connect = _lib.lookupFunction<
-        ffi.Pointer<WingConsole> Function(ffi.Pointer<ffi.Int8>),
-        ffi.Pointer<WingConsole> Function(
-            ffi.Pointer<ffi.Int8>)>('wing_console_connect');
+        discoverGetName = _lib.lookupFunction<
+            Pointer<Utf8> Function(Pointer<NativeWingDiscover>, Int32),
+            Pointer<Utf8> Function(Pointer<NativeWingDiscover>, int)>('wing_discover_get_name');
 
-    destroy = _lib.lookupFunction<
-        ffi.Void Function(ffi.Pointer<WingConsole>),
-        void Function(ffi.Pointer<WingConsole>)>('wing_console_destroy');
+        discoverGetModel = _lib.lookupFunction<
+            Pointer<Utf8> Function(Pointer<NativeWingDiscover>, Int32),
+            Pointer<Utf8> Function(Pointer<NativeWingDiscover>, int)>('wing_discover_get_model');
 
-    read = _lib.lookupFunction<
-        ffi.Void Function(ffi.Pointer<WingConsole>),
-        void Function(ffi.Pointer<WingConsole>)>('wing_console_read');
+        discoverGetSerial = _lib.lookupFunction<
+            Pointer<Utf8> Function(Pointer<NativeWingDiscover>, Int32),
+            Pointer<Utf8> Function(Pointer<NativeWingDiscover>, int)>('wing_discover_get_serial');
 
-    setString = _lib.lookupFunction<
-        ffi.Void Function(ffi.Pointer<WingConsole>, ffi.Uint32,
-            ffi.Pointer<ffi.Int8>),
-        void Function(ffi.Pointer<WingConsole>, ffi.Uint32,
-            ffi.Pointer<ffi.Int8>)>('wing_console_set_string');
+        discoverGetFirmware = _lib.lookupFunction<
+            Pointer<Utf8> Function(Pointer<NativeWingDiscover>, Int32),
+            Pointer<Utf8> Function(Pointer<NativeWingDiscover>, int)>('wing_discover_get_firmware');
 
-    setFloat = _lib.lookupFunction<
-        ffi.Void Function(ffi.Pointer<WingConsole>, ffi.Uint32, ffi.Float),
-        void Function(
-            ffi.Pointer<WingConsole>, ffi.Uint32, double)>('wing_console_set_float');
+        consoleConnect = _lib.lookupFunction<
+            Pointer<NativeWingConsole> Function(Pointer<Utf8>),
+            Pointer<NativeWingConsole> Function(Pointer<Utf8>)>('wing_console_connect');
 
-    setInt = _lib.lookupFunction<
-        ffi.Void Function(ffi.Pointer<WingConsole>, ffi.Uint32, ffi.Int32),
-        void Function(
-            ffi.Pointer<WingConsole>, ffi.Uint32, ffi.Int32)>('wing_console_set_int');
-  }
+        consoleDestroy = _lib.lookupFunction<
+            Void Function(Pointer<NativeWingConsole>),
+            void Function(Pointer<NativeWingConsole>)>('wing_console_destroy');
+
+        consoleRead = _lib.lookupFunction<
+            Void Function(Pointer<NativeWingConsole>),
+            void Function(Pointer<NativeWingConsole>)>('wing_console_read');
+
+        consoleSetString = _lib.lookupFunction<
+            Void Function(Pointer<NativeWingConsole>, Uint32, Pointer<Utf8>),
+            void Function(Pointer<NativeWingConsole>, int, Pointer<Utf8>)>('wing_console_set_string');
+
+        consoleSetFloat = _lib.lookupFunction<
+            Void Function(Pointer<NativeWingConsole>, Uint32, Double),
+            void Function(Pointer<NativeWingConsole>, int, double)>('wing_console_set_float');
+
+        consoleSetInt = _lib.lookupFunction<
+            Void Function(Pointer<NativeWingConsole>, Uint32, Int32),
+            void Function(Pointer<NativeWingConsole>, int, int)>('wing_console_set_int');
+    }
 }
