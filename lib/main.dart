@@ -3,8 +3,10 @@
 import "dart:convert";
 import "dart:io";
 import "package:flutter/material.dart";
+import "package:provider/provider.dart";
 
 import "wing_bridge.dart";
+import "mixer_state.dart";
 import "hexcolor.dart";
 import "buttons.dart";
 import "let.dart";
@@ -133,29 +135,6 @@ void main() async {
 
   c = WingConsole.connect(consoles[0].ip);
 
-  c!.setNodeDataCallback((id, data) {
-    String name = WingConsole.nodeIdToName(id);
-    if (name == "") name = "<UnknownId:$id>";
-    print("flutter onData: $name: ${data.stringValue}");
-
-    for (final output in mixerOutputs.values) {
-      if (id == output.wingPropLevel) {
-        output.level = data.floatValue;
-      }
-      if (id == output.wingPropMute) {
-        output.enabled = data.intValue == 0;
-      }
-
-      for (final source in output.sources.values) {
-        if (id == source.wingPropLevel) {
-          source.level = data.floatValue;
-        }
-        if (id == source.wingPropSend) {
-          source.enabled = data.intValue != 0;
-        }
-      }
-    }
-  });
 
   config = jsonDecode(await File("/Users/danny/work/studio161/config.json").readAsString());
 
@@ -184,7 +163,10 @@ void main() async {
   }
 
   c!.read();
-  runApp(const MyApp());
+  runApp(ChangeNotifierProvider(
+    create: (context) => MixerState(c!),
+    child: const MyApp(),
+  ));
 }
 
 class MyApp extends StatelessWidget {
@@ -294,7 +276,8 @@ class _MainBarState extends State<MainBar> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return Consumer<MixerState>(
+      builder: (context, mixerState, child) => Container(
       color: Colors.yellow,
       height: 80,
       child: Row(
