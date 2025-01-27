@@ -80,6 +80,24 @@ class WingBindings {
         Pointer<Void> userData
     ) consoleSetNodeDataCallback;
 
+    // Node property getters
+    late final int Function(Pointer<NativeNodeDefinition>) wingNodeDefGetId;
+    late final int Function(Pointer<NativeNodeDefinition>) wingNodeDefGetType;
+    late final int Function(Pointer<NativeNodeDefinition>) wingNodeDefGetUnit;
+    late final Pointer<Utf8> Function(Pointer<NativeNodeDefinition>) wingNodeDefGetName;
+    late final Pointer<Utf8> Function(Pointer<NativeNodeDefinition>) wingNodeDefGetPath;
+    late final double Function(Pointer<NativeNodeDefinition>) wingNodeDefGetMin;
+    late final double Function(Pointer<NativeNodeDefinition>) wingNodeDefGetMax;
+    late final double Function(Pointer<NativeNodeDefinition>) wingNodeDefGetDefault;
+    late final int Function(Pointer<NativeNodeDefinition>) wingNodeDefGetEnumCount;
+    late final Pointer<Utf8> Function(Pointer<NativeNodeDefinition>, int) wingNodeDefGetEnumName;
+    late final double Function(Pointer<NativeNodeDefinition>, int) wingNodeDefGetEnumValue;
+
+    late final int Function(Pointer<NativeNodeData>) wingNodeDataGetType;
+    late final double Function(Pointer<NativeNodeData>) wingNodeDataGetFloat;
+    late final int Function(Pointer<NativeNodeData>) wingNodeDataGetInt;
+    late final Pointer<Utf8> Function(Pointer<NativeNodeData>) wingNodeDataGetString;
+
     WingBindings(this._lib) {
         discoverScan = _lib.lookupFunction<
             Pointer<NativeWingDiscover> Function(Int32),
