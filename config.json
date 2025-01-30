@@ -1,0 +1,124 @@
+{
+    "outputs": [
+        {
+            "id": "8c",
+            "name": "Room",
+            "color": "#40a0ff",
+            "inputs": [ ],
+            "main": 1
+        },
+        {
+            "id": "hpp",
+            "name": "Headphones (piano)",
+            "color": "#ff8000",
+            "inputs": [ ],
+            "bus": 2
+        },
+        {
+            "id": "hpd",
+            "name": "Headphones (drums)",
+            "color": "#ff8000",
+            "inputs": [ ],
+            "bus": 1
+        },
+        {
+            "id": "hps",
+            "name": "Headphones (seat)",
+            "color": "#ff8000",
+            "inputs": [ ],
+            "bus": 3
+        }
+    ],
+    "inputs": [
+        {
+            "id": "midi1",
+            "name": "MIDI 1",
+            "color": "#a000ff",
+            "channel": 11
+        },
+        {
+            "id": "midi2",
+            "name": "MIDI 2",
+            "color": "#a000ff",
+            "channel": 12
+        },
+        {
+            "id": "midi3",
+            "name": "MIDI 3",
+            "color": "#a000ff",
+            "channel": 13
+        },
+        {
+            "id": "midi4",
+            "name": "MIDI 4",
+            "color": "#a000ff",
+            "channel": 14
+        },
+        {
+            "id": "cablered",
+            "name": "Cable (red)",
+            "color": "#00a0ff",
+            "channel": 4
+        },
+        {
+            "id": "cableyellow",
+            "name": "Cable (yellow)",
+            "color": "#00a0ff",
+            "channel": 5
+        },
+        {
+            "id": "cablewhite",
+            "name": "Cable (white)",
+            "color": "#00a0ff",
+            "channel": 3
+        },
+        {
+            "id": "cablepurple",
+            "name": "Cable (purple)",
+            "color": "#00a0ff",
+            "channel": 2
+        },
+        {
+            "id": "drums",
+            "name": "Drums",
+            "color": "#ff8040",
+            "channel": 6
+        },
+        {
+            "id": "drumsdac",
+            "name": "iPad (drums)",
+            "color": "#ff8040",
+            "channel": 9
+        },
+        {
+            "id": "piano",
+            "name": "Piano",
+            "color": "#80a080",
+            "channel": 7
+        },
+        {
+            "id": "pianodac",
+            "name": "iPad (piano)",
+            "color": "#80a080",
+            "channel": 10
+        },
+        {
+            "id": "mic",
+            "name": "Microphone",
+            "color": "#80a0ff",
+            "channel": 8
+        },
+        {
+            "id": "mac",
+            "name": "Mac",
+            "color": "#ff4040",
+            "channel": 1
+        },
+        {
+            "id": "pc",
+            "name": "PC",
+            "color": "#ff4040",
+            "channel": 15
+        }
+    ]
+}

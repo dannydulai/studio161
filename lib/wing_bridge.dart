@@ -1,11 +1,9 @@
-// ignore_for_file: avoid_print
-
 import 'dart:ffi';
 import 'dart:isolate';
 import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 
-import './wing_bindings.dart';
+import 'wing_bindings.dart';
 
 class WingDiscover {
     const WingDiscover({
@@ -43,10 +41,43 @@ class WingDiscover {
     }
 }
 
-void _task(WingConsole model) {
-    _bindings.consoleRead(model._console);
+class WingReadIsolate {
+    final Pointer<NativeWingConsole> _console;
+    final SendPort sendPort;
 
-    print("flutter _task: done reading");
+    WingReadIsolate(this._console, this.sendPort);
+}
+
+class IsolateMessageRequestEnd {
+}
+class IsolateMessageNodeDefinition {
+    final NodeDefinition def;
+    IsolateMessageNodeDefinition(this.def);
+}
+class IsolateMessageNodeData {
+    final int id;
+    final NodeData data;
+    IsolateMessageNodeData(this.id, this.data);
+}
+
+void _task(WingReadIsolate iso) {
+    final nativeCallableRequestEnd = NativeCallable<WingRequestEndCallback>.isolateLocal(
+            (Pointer<Void> userData) {
+                iso.sendPort.send(IsolateMessageRequestEnd());
+            });
+    _bindings.consoleSetRequestEndCallback(iso._console, nativeCallableRequestEnd.nativeFunction, nullptr);
+    final nativeCallableNodeDefinition = NativeCallable<WingNodeDefinitionCallback>.isolateLocal(
+            (Pointer<NativeNodeDefinition> def, Pointer<Void> userData) {
+                iso.sendPort.send(IsolateMessageNodeDefinition(NodeDefinition(def)));
+            });
+    _bindings.consoleSetNodeDefinitionCallback(iso._console, nativeCallableNodeDefinition.nativeFunction, nullptr);
+    final nativeCallableNodeData = NativeCallable<WingNodeDataCallback>.isolateLocal(
+            (int id, Pointer<NativeNodeData> data, Pointer<Void> userData) {
+                iso.sendPort.send(IsolateMessageNodeData(id, NodeData(data)));
+            });
+    _bindings.consoleSetNodeDataCallback(iso._console, nativeCallableNodeData.nativeFunction, nullptr);
+
+    _bindings.consoleRead(iso._console);
 }
 
 const _libname = 'wing';
@@ -61,45 +92,81 @@ final DynamicLibrary _lib = switch (defaultTargetPlatform) {
 final WingBindings _bindings = WingBindings(_lib);
 
 class NodeDefinition {
+  static final Finalizer<NodeDefinition> _finalizer =
+      Finalizer((n) => n._close());
     final Pointer<NativeNodeDefinition> _p;
+
+    void _close() {
+        _bindings.nodeDefDestroy(_p);
+        _finalizer.detach(this);
+    }
 
     NodeDefinition(this._p);
 
-    int get id => _bindings.wingNodeDefGetId(_p);
-    NodeType get type => NodeType.values[_bindings.wingNodeDefGetType(_p)];
-    NodeUnit get unit => NodeUnit.values[_bindings.wingNodeDefGetUnit(_p)];
-    String get name => _bindings.wingNodeDefGetName(_p).toDartString();
-    String get path => _bindings.wingNodeDefGetPath(_p).toDartString();
-    double get min => _bindings.wingNodeDefGetMin(_p);
-    double get max => _bindings.wingNodeDefGetMax(_p);
-    double get defaultValue => _bindings.wingNodeDefGetDefault(_p);
-    int get enumCount => _bindings.wingNodeDefGetEnumCount(_p);
+    NodeType get type => NodeType.values[_bindings.nodeDefGetType(_p)];
+    NodeUnit get unit => NodeUnit.values[_bindings.nodeDefGetUnit(_p)];
+    bool get isReadOnly => _bindings.nodeDefIsReadOnly(_p) != 0;
+    int get parentId => _bindings.nodeDefGetParentId(_p);
+    int get id => _bindings.nodeDefGetId(_p);
+    int get index => _bindings.nodeDefGetIndex(_p);
+    String get name {
+        final int bufferSize = 1024; // Reasonable default size
+        final Pointer<Utf8> buffer = malloc<Uint8>(bufferSize).cast<Utf8>();
+        try {
+            _bindings.nodeDefGetName(_p, buffer, bufferSize);
+            return buffer.toDartString();
+        } finally {
+            malloc.free(buffer);
+        }
+    }
+    String get longName {
+        final int bufferSize = 1024; // Reasonable default size
+        final Pointer<Utf8> buffer = malloc<Uint8>(bufferSize).cast<Utf8>();
+        try {
+            _bindings.nodeDefGetLongName(_p, buffer, bufferSize);
+            return buffer.toDartString();
+        } finally {
+            malloc.free(buffer);
+        }
+    }
+    double get minFloat => _bindings.nodeDefGetMinFloat(_p);
+    double get maxFloat => _bindings.nodeDefGetMaxFloat(_p);
+    int get steps => _bindings.nodeDefGetSteps(_p);
+    int get minInt => _bindings.nodeDefGetMinInt(_p);
+    int get maxInt => _bindings.nodeDefGetMaxInt(_p);
+    int get maxStringLength => _bindings.nodeDefGetMaxStringLen(_p);
+    int get stringEnumCount => _bindings.nodeDefGetStringEnumCount(_p);
+    int get floatEnumCount => _bindings.nodeDefGetFloatEnumCount(_p);
     
-    String getEnumName(int index) => _bindings.wingNodeDefGetEnumName(_p, index).toDartString();
-    double getEnumValue(int index) => _bindings.wingNodeDefGetEnumValue(_p, index);
+    // XXX
+    // Tuple<String, String> getStringEnumItem(int index) => _bindings.nodeDefGetStringEnumItem(_p, index);
+    // Tuple<double, String> getFloatEnumItem(int index) => _bindings.nodeDefGetFloatEnumItem(_p, index);
 }
 
 class NodeData {
+  static final Finalizer<NodeData> _finalizer =
+      Finalizer((n) => n._close());
+
     final Pointer<NativeNodeData> _p;
 
     NodeData(this._p);
 
-    NodeType get type => NodeType.values[_bindings.wingNodeDataGetType(_p)];
-    
-    bool get hasString => _bindings.wingNodeDataHasString(_p) != 0;
-    bool get hasFloat => _bindings.wingNodeDataHasFloat(_p) != 0;
-    bool get hasInt => _bindings.wingNodeDataHasInt(_p) != 0;
+    void _close() {
+        _bindings.nodeDataDestroy(_p);
+        _finalizer.detach(this);
+    }
 
-    double get floatValue => _bindings.wingNodeDataGetFloat(_p);
-    int    get intValue => _bindings.wingNodeDataGetInt(_p);
+    bool get hasString => _bindings.nodeDataHasString(_p) != 0;
+    bool get hasFloat => _bindings.nodeDataHasFloat(_p) != 0;
+    bool get hasInt => _bindings.nodeDataHasInt(_p) != 0;
+
+    double get floatValue => _bindings.nodeDataGetFloat(_p);
+    int    get intValue => _bindings.nodeDataGetInt(_p);
     String get stringValue {
         final int bufferSize = 1024; // Reasonable default size
         final Pointer<Utf8> buffer = malloc<Uint8>(bufferSize).cast<Utf8>();
         try {
-            final int result = _bindings.wingNodeDataGetString(_p, buffer, bufferSize);
-            if (result < 0) {
-                throw Exception('Failed to get string value');
-            }
+            _bindings.nodeDataGetString(_p, buffer, bufferSize);
             return buffer.toDartString();
         } finally {
             malloc.free(buffer);
@@ -109,6 +176,38 @@ class NodeData {
 
 class WingConsole {
   final Pointer<NativeWingConsole> _console;
+
+  void Function(NodeDefinition)? _cbNodeDefinition;
+  void Function(int, NodeData)?  _cbNodeData;
+  void Function()?               _cbRequestEnd;
+
+  static void nodeInitMap(String name) {
+        final nameNative = name.toNativeUtf8(allocator: malloc);
+        try {
+            if (_bindings.nodeInitMap(nameNative) != 0) {
+                throw Exception("Failed to initialize node map");
+            }
+        } finally {
+            malloc.free(nameNative);
+        }
+    }
+  static int nodeNameToId(String name) {
+        final nameNative = name.toNativeUtf8(allocator: malloc);
+        try {
+            return _bindings.nodeNameToId(nameNative);
+        } finally {
+            malloc.free(nameNative);
+        }
+    }
+  static String nodeIdToName(int id) {
+        final buffer = malloc<Uint8>(1024).cast<Utf8>();
+        try {
+            _bindings.nodeIdToName(id, buffer, 1024);
+            return buffer.toDartString();
+        } finally {
+            malloc.free(buffer);
+        }
+    }
 
   static final Finalizer<WingConsole> _finalizer =
       Finalizer((console) => console._close());
@@ -126,14 +225,28 @@ class WingConsole {
   }
 
   void _close() {
-      print("flutter _close");
-
       _bindings.consoleDestroy(_console);
       _finalizer.detach(this);
   }
 
-  void read() {
-      Isolate.spawn<WingConsole>(_task, this);
+  void read() async {
+      final receivePort = ReceivePort();
+      receivePort.listen((message) {
+        if (message is IsolateMessageRequestEnd) {
+            _cbRequestEnd?.call();
+        } else if (message is IsolateMessageNodeDefinition) {
+            _cbNodeDefinition?.call(message.def);
+        } else if (message is IsolateMessageNodeData) {
+            _cbNodeData?.call(message.id, message.data);
+        } else {
+            throw UnimplementedError();
+        }
+      });
+      await Isolate.spawn<WingReadIsolate>(_task, WingReadIsolate(_console, receivePort.sendPort));
+  }
+
+  void requestNodeData(int id) {
+      _bindings.consoleRequestNodeData(_console, id);
   }
 
   void setString(int id, String value) {
@@ -153,42 +266,15 @@ class WingConsole {
       _bindings.consoleSetInt(_console, id, value);
   }
 
-  // Callback storage
-  Pointer<NativeFunction<WingRequestEndCallback>>? _requestEndCallback;
-  Pointer<NativeFunction<WingNodeDefinitionCallback>>? _nodeDefinitionCallback;
-  Pointer<NativeFunction<WingNodeDataCallback>>? _nodeDataCallback;
-
-  // Callback setters
   void setRequestEndCallback(void Function() callback) {
-    // Convert Dart function to native callback
-    _requestEndCallback = Pointer.fromFunction<WingRequestEndCallback>(
-      (Pointer<Void> userData) {
-        callback();
-      },
-    );
-    
-    _bindings.consoleSetRequestEndCallback(_console, _requestEndCallback!, nullptr);
+      _cbRequestEnd = callback;
   }
 
   void setNodeDefinitionCallback(void Function(NodeDefinition) callback) {
-    // Convert Dart function to native callback
-    _nodeDefinitionCallback = Pointer.fromFunction<WingNodeDefinitionCallback>(
-      (Pointer<NativeNodeDefinition> def, Pointer<Void> userData) {
-        callback(NodeDefinition(def));
-      },
-    );
-    
-    _bindings.consoleSetNodeDefinitionCallback(_console, _nodeDefinitionCallback!, nullptr);
+      _cbNodeDefinition = callback;
   }
 
   void setNodeDataCallback(void Function(int, NodeData) callback) {
-    // Convert Dart function to native callback
-    _nodeDataCallback = Pointer.fromFunction<WingNodeDataCallback>(
-      (int id, Pointer<NativeNodeData> data, Pointer<Void> userData) {
-        callback(id, NodeData(data));
-      },
-    );
-    
-    _bindings.consoleSetNodeDataCallback(_console, _nodeDataCallback!, nullptr);
+      _cbNodeData = callback;
   }
 }
