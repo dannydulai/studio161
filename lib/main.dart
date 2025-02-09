@@ -1,3 +1,5 @@
+import 'package:flutter/services.dart' show rootBundle;
+
 import "dart:convert";
 import "dart:io";
 import "package:flutter/material.dart";
@@ -193,8 +195,7 @@ void main() async {
   _c = WingConsole.connect(consoles[0].ip);
   _mixerState = MixerState(_c);
 
-  config = jsonDecode(
-      await File("config.json").readAsString());
+  config = jsonDecode(await rootBundle.loadString('config.json'));
 
   (config["inputs"] as JList)
       .map((input) => MixerInput.fromJson(input))
