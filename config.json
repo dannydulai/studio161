@@ -3,122 +3,127 @@
         {
             "id": "8c",
             "name": "Room",
-            "color": "#40a0ff",
+            "color": "#f0f0f0",
             "inputs": [ ],
+            "icon": "/Users/danny/Downloads/speaker-svgrepo-com.svg",
             "main": 1
         },
         {
             "id": "hpp",
-            "name": "Headphones (piano)",
-            "color": "#ff8000",
+            "name": "Headphones",
+            "color": "#f0f0f0",
             "inputs": [ ],
+            "icon": "/Users/danny/Downloads/piano-svgrepo-com.svg",
             "bus": 2
         },
         {
             "id": "hpd",
-            "name": "Headphones (drums)",
-            "color": "#ff8000",
+            "name": "Headphones",
+            "color": "#f0f0f0",
             "inputs": [ ],
+            "icon": "/Users/danny/Downloads/drums-svgrepo-com.svg",
             "bus": 1
         },
         {
             "id": "hps",
-            "name": "Headphones (seat)",
-            "color": "#ff8000",
+            "name": "Headphones",
+            "color": "#f0f0f0",
             "inputs": [ ],
+            "icon": "/Users/danny/Downloads/noun-barcelona-chair-3221.svg",
             "bus": 3
         }
     ],
     "inputs": [
         {
-            "id": "midi1",
-            "name": "MIDI 1",
-            "color": "#a000ff",
-            "channel": 11
-        },
-        {
-            "id": "midi2",
-            "name": "MIDI 2",
-            "color": "#a000ff",
-            "channel": 12
-        },
-        {
-            "id": "midi3",
-            "name": "MIDI 3",
-            "color": "#a000ff",
-            "channel": 13
-        },
-        {
-            "id": "midi4",
-            "name": "MIDI 4",
-            "color": "#a000ff",
-            "channel": 14
-        },
-        {
             "id": "cablered",
-            "name": "Cable (red)",
-            "color": "#00a0ff",
+            "name": "Red Cable",
+            "color": "#ff0000",
+            "icon": "/Users/danny/Downloads/audio-jack-connector-svgrepo-com.svg",
+            "iconScale": 0.8,
             "channel": 4
         },
         {
             "id": "cableyellow",
-            "name": "Cable (yellow)",
-            "color": "#00a0ff",
+            "name": "Yellow Cable",
+            "color": "#ffff00",
+            "icon": "/Users/danny/Downloads/audio-jack-connector-svgrepo-com.svg",
+            "iconScale": 0.8,
             "channel": 5
         },
         {
             "id": "cablewhite",
-            "name": "Cable (white)",
-            "color": "#00a0ff",
+            "name": "White Cable",
+            "color": "#ffffff",
+            "icon": "/Users/danny/Downloads/audio-jack-connector-svgrepo-com.svg",
+            "iconScale": 0.9,
             "channel": 3
         },
         {
             "id": "cablepurple",
-            "name": "Cable (purple)",
-            "color": "#00a0ff",
+            "name": "Purple Cable",
+            "color": "#ff40ff",
+            "icon": "/Users/danny/Downloads/audio-jack-connector-svgrepo-com.svg",
+            "iconScale": 0.9,
             "channel": 2
         },
         {
             "id": "drums",
             "name": "Drums",
-            "color": "#ff8040",
+            "color": "#de3163",
+            "icon": "/Users/danny/Downloads/drums-svgrepo-com.svg",
             "channel": 6
         },
         {
             "id": "drumsdac",
-            "name": "iPad (drums)",
-            "color": "#ff8040",
+            "name": "iPad",
+            "color": "#de3163",
+            "icon": "/Users/danny/Downloads/drums-svgrepo-com.svg",
             "channel": 9
         },
         {
             "id": "piano",
             "name": "Piano",
-            "color": "#80a080",
+            "color": "#0080fe",
+            "icon": "/Users/danny/Downloads/piano-svgrepo-com.svg",
             "channel": 7
         },
         {
             "id": "pianodac",
-            "name": "iPad (piano)",
-            "color": "#80a080",
+            "name": "iPad",
+            "color": "#0080fe",
+            "icon": "/Users/danny/Downloads/piano-svgrepo-com.svg",
             "channel": 10
         },
         {
             "id": "mic",
             "name": "Microphone",
-            "color": "#80a0ff",
+            "color": "#4cbb17",
+            "icon": "/Users/danny/Downloads/microphone-4-svgrepo-com.svg",
+            "iconScale": 0.7,
             "channel": 8
         },
         {
             "id": "mac",
-            "name": "Mac",
-            "color": "#ff4040",
+            "name": "Mac (Holo Audio)",
+            "color": "#ffbf00",
+            "icon": "/Users/danny/Downloads/laptop-svgrepo-com.svg",
             "channel": 1
         },
         {
             "id": "pc",
-            "name": "PC",
-            "color": "#ff4040",
+            "name": "PC (Main)",
+            "color": "#ffbf00",
+            "icon": "/Users/danny/Downloads/pc-display-2-svgrepo-com.svg",
+            "iconScale": 0.90,
             "channel": 15
+        },
+        {
+            "id": "pcmidi",
+            "name": "PC (MIDI)",
+            "color": "#ffbf00",
+            "icon": "/Users/danny/Downloads/midi-svgrepo-com.svg",
+            "iconScale": 1.6,
+            "channel": 11
         }
     ]
 }

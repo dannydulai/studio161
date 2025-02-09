@@ -1,5 +1,4 @@
 import 'dart:ffi';
-import 'dart:isolate';
 import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 
@@ -22,65 +21,36 @@ class WingDiscover {
 
     static List<WingDiscover> scan({bool stopOnFirst = false}) {
         final ret = <WingDiscover>[];
-        final d = _bindings.discoverScan(stopOnFirst ? 1 : 0);
+        final d = ffiBindings.discoverScan(stopOnFirst ? 1 : 0);
         int i = 0;
-        int n = _bindings.discoverCount(d);
+        int n = ffiBindings.discoverCount(d);
         while (i < n) {
+            final ip = ffiBindings.discoverGetIp(d, i);
+            final name = ffiBindings.discoverGetName(d, i);
+            final model = ffiBindings.discoverGetModel(d, i);
+            final serial = ffiBindings.discoverGetSerial(d, i);
+            final firmware = ffiBindings.discoverGetFirmware(d, i);
             ret.add(WingDiscover(
-                        ip: _bindings.discoverGetIp(d, i).toDartString(),
-                        name: _bindings.discoverGetName(d, i).toDartString(),
-                        model: _bindings.discoverGetModel(d, i).toDartString(),
-                        serial: _bindings.discoverGetSerial(d, i).toDartString(),
-                        firmware: _bindings.discoverGetFirmware(d, i).toDartString() 
+                        ip: ip.toDartString(),
+                        name: name.toDartString(),
+                        model: model.toDartString(),
+                        serial: serial.toDartString(),
+                        firmware: firmware.toDartString(),
                         ));
+            ffiBindings.stringDestroy(ip);
+            ffiBindings.stringDestroy(name);
+            ffiBindings.stringDestroy(model);
+            ffiBindings.stringDestroy(serial);
+            ffiBindings.stringDestroy(firmware);
             i++;
         }
 
-        _bindings.discoverDestroy(d);
+        ffiBindings.discoverDestroy(d);
         return ret;
     }
 }
 
-class WingReadIsolate {
-    final Pointer<NativeWingConsole> _console;
-    final SendPort sendPort;
-
-    WingReadIsolate(this._console, this.sendPort);
-}
-
-class IsolateMessageRequestEnd {
-}
-class IsolateMessageNodeDefinition {
-    final NodeDefinition def;
-    IsolateMessageNodeDefinition(this.def);
-}
-class IsolateMessageNodeData {
-    final int id;
-    final NodeData data;
-    IsolateMessageNodeData(this.id, this.data);
-}
-
-void _task(WingReadIsolate iso) {
-    final nativeCallableRequestEnd = NativeCallable<WingRequestEndCallback>.isolateLocal(
-            (Pointer<Void> userData) {
-                iso.sendPort.send(IsolateMessageRequestEnd());
-            });
-    _bindings.consoleSetRequestEndCallback(iso._console, nativeCallableRequestEnd.nativeFunction, nullptr);
-    final nativeCallableNodeDefinition = NativeCallable<WingNodeDefinitionCallback>.isolateLocal(
-            (Pointer<NativeNodeDefinition> def, Pointer<Void> userData) {
-                iso.sendPort.send(IsolateMessageNodeDefinition(NodeDefinition(def)));
-            });
-    _bindings.consoleSetNodeDefinitionCallback(iso._console, nativeCallableNodeDefinition.nativeFunction, nullptr);
-    final nativeCallableNodeData = NativeCallable<WingNodeDataCallback>.isolateLocal(
-            (int id, Pointer<NativeNodeData> data, Pointer<Void> userData) {
-                iso.sendPort.send(IsolateMessageNodeData(id, NodeData(data)));
-            });
-    _bindings.consoleSetNodeDataCallback(iso._console, nativeCallableNodeData.nativeFunction, nullptr);
-
-    _bindings.consoleRead(iso._console);
-}
-
-const _libname = 'wing';
+const _libname = 'libwing';
 final DynamicLibrary _lib = switch (defaultTargetPlatform) {
     TargetPlatform.android => DynamicLibrary.open("lib$_libname.so"),
     TargetPlatform.linux => DynamicLibrary.open("lib$_libname.so"),
@@ -89,192 +59,191 @@ final DynamicLibrary _lib = switch (defaultTargetPlatform) {
     _ => DynamicLibrary.executable(),
 };
 
-final WingBindings _bindings = WingBindings(_lib);
+final WingBindings ffiBindings = WingBindings(_lib);
 
-class NodeDefinition {
-  static final Finalizer<NodeDefinition> _finalizer =
-      Finalizer((n) => n._close());
-    final Pointer<NativeNodeDefinition> _p;
+class Response {
+  static final Finalizer<Response> _finalizer =
+      Finalizer((response) => response._close());
 
-    void _close() {
-        _bindings.nodeDefDestroy(_p);
-        _finalizer.detach(this);
-    }
+  void _close() {
+      ffiBindings.responseDestroy(_response);
+      _finalizer.detach(this);
+  }
 
-    NodeDefinition(this._p);
+  Response.fromNative(this._response);
 
-    NodeType get type => NodeType.values[_bindings.nodeDefGetType(_p)];
-    NodeUnit get unit => NodeUnit.values[_bindings.nodeDefGetUnit(_p)];
-    bool get isReadOnly => _bindings.nodeDefIsReadOnly(_p) != 0;
-    int get parentId => _bindings.nodeDefGetParentId(_p);
-    int get id => _bindings.nodeDefGetId(_p);
-    int get index => _bindings.nodeDefGetIndex(_p);
-    String get name {
-        final int bufferSize = 1024; // Reasonable default size
-        final Pointer<Utf8> buffer = malloc<Uint8>(bufferSize).cast<Utf8>();
+  final Pointer<NativeResponse> _response;
+
+    ResponseType get type => ResponseType.values[ffiBindings.responseGetType(_response)];
+    bool get dataHasString => ffiBindings.nodeDataHasString(_response) != 0;
+    bool get dataHasFloat => ffiBindings.nodeDataHasFloat(_response) != 0;
+    bool get dataHasInt => ffiBindings.nodeDataHasInt(_response) != 0;
+
+    int    get dataId => ffiBindings.nodeDataGetId(_response);
+    double get dataFloatValue => ffiBindings.nodeDataGetFloat(_response);
+    int    get dataIntValue => ffiBindings.nodeDataGetInt(_response);
+    String get dataStringValue {
+        final str = ffiBindings.nodeDataGetString(_response);
         try {
-            _bindings.nodeDefGetName(_p, buffer, bufferSize);
-            return buffer.toDartString();
+            return str.toDartString();
         } finally {
-            malloc.free(buffer);
+            ffiBindings.stringDestroy(str);
         }
     }
-    String get longName {
-        final int bufferSize = 1024; // Reasonable default size
-        final Pointer<Utf8> buffer = malloc<Uint8>(bufferSize).cast<Utf8>();
+
+    NodeType get defType => NodeType.values[ffiBindings.nodeDefGetType(_response)];
+    NodeUnit get defUnit => NodeUnit.values[ffiBindings.nodeDefGetUnit(_response)];
+    bool get defIsReadOnly => ffiBindings.nodeDefIsReadOnly(_response) != 0;
+    int get defParentId => ffiBindings.nodeDefGetParentId(_response);
+    int get defId => ffiBindings.nodeDefGetId(_response);
+    int get defIndex => ffiBindings.nodeDefGetIndex(_response);
+    String get defName {
+        final str = ffiBindings.nodeDefGetName(_response);
         try {
-            _bindings.nodeDefGetLongName(_p, buffer, bufferSize);
-            return buffer.toDartString();
+            return str.toDartString();
         } finally {
-            malloc.free(buffer);
+            ffiBindings.stringDestroy(str);
         }
     }
-    double get minFloat => _bindings.nodeDefGetMinFloat(_p);
-    double get maxFloat => _bindings.nodeDefGetMaxFloat(_p);
-    int get steps => _bindings.nodeDefGetSteps(_p);
-    int get minInt => _bindings.nodeDefGetMinInt(_p);
-    int get maxInt => _bindings.nodeDefGetMaxInt(_p);
-    int get maxStringLength => _bindings.nodeDefGetMaxStringLen(_p);
-    int get stringEnumCount => _bindings.nodeDefGetStringEnumCount(_p);
-    int get floatEnumCount => _bindings.nodeDefGetFloatEnumCount(_p);
+    String get defLongName {
+        final str = ffiBindings.nodeDefGetLongName(_response);
+        try {
+            return str.toDartString();
+        } finally {
+            ffiBindings.stringDestroy(str);
+        }
+    }
+    double get defMinFloat => ffiBindings.nodeDefGetMinFloat(_response);
+    double get defMaxFloat => ffiBindings.nodeDefGetMaxFloat(_response);
+    int get defSteps => ffiBindings.nodeDefGetSteps(_response);
+    int get defMinInt => ffiBindings.nodeDefGetMinInt(_response);
+    int get defMaxInt => ffiBindings.nodeDefGetMaxInt(_response);
+    int get defMaxStringLength => ffiBindings.nodeDefGetMaxStringLen(_response);
+    int get defStringEnumCount => ffiBindings.nodeDefGetStringEnumCount(_response);
+    int get defFloatEnumCount => ffiBindings.nodeDefGetFloatEnumCount(_response);
     
     // XXX
-    // Tuple<String, String> getStringEnumItem(int index) => _bindings.nodeDefGetStringEnumItem(_p, index);
-    // Tuple<double, String> getFloatEnumItem(int index) => _bindings.nodeDefGetFloatEnumItem(_p, index);
-}
-
-class NodeData {
-  static final Finalizer<NodeData> _finalizer =
-      Finalizer((n) => n._close());
-
-    final Pointer<NativeNodeData> _p;
-
-    NodeData(this._p);
-
-    void _close() {
-        _bindings.nodeDataDestroy(_p);
-        _finalizer.detach(this);
-    }
-
-    bool get hasString => _bindings.nodeDataHasString(_p) != 0;
-    bool get hasFloat => _bindings.nodeDataHasFloat(_p) != 0;
-    bool get hasInt => _bindings.nodeDataHasInt(_p) != 0;
-
-    double get floatValue => _bindings.nodeDataGetFloat(_p);
-    int    get intValue => _bindings.nodeDataGetInt(_p);
-    String get stringValue {
-        final int bufferSize = 1024; // Reasonable default size
-        final Pointer<Utf8> buffer = malloc<Uint8>(bufferSize).cast<Utf8>();
-        try {
-            _bindings.nodeDataGetString(_p, buffer, bufferSize);
-            return buffer.toDartString();
-        } finally {
-            malloc.free(buffer);
-        }
-    }
+    // Tuple<String, String> getStringEnumItem(int index) => _bindings.nodeDefGetStringEnumItem(_response, index);
+    // Tuple<double, String> getFloatEnumItem(int index) => _bindings.nodeDefGetFloatEnumItem(_response, index);
 }
 
 class WingConsole {
+  static final Finalizer<WingConsole> _finalizer =
+      Finalizer((console) => console._close());
+
+  void _close() {
+      ffiBindings.consoleDestroy(_console);
+      _finalizer.detach(this);
+  }
+
+  WingConsole._fromNative(this._console);
+
   final Pointer<NativeWingConsole> _console;
+  Pointer<NativeWingConsole> get nativePointer => _console;
 
-  void Function(NodeDefinition)? _cbNodeDefinition;
-  void Function(int, NodeData)?  _cbNodeData;
-  void Function()?               _cbRequestEnd;
-
-  static void nodeInitMap(String name) {
+  static int nameToId(String name) {
         final nameNative = name.toNativeUtf8(allocator: malloc);
         try {
-            if (_bindings.nodeInitMap(nameNative) != 0) {
-                throw Exception("Failed to initialize node map");
+            Pointer<Int32> outId = malloc<Int32>(1);
+            try {
+                final rc = ffiBindings.nameToId(nameNative, outId);
+                if (rc != 0) {
+                    return outId.value;
+                } else {
+                    throw Exception('Failed to convert name $name to id');
+                }
+            } finally {
+                malloc.free(outId);
             }
         } finally {
             malloc.free(nameNative);
         }
     }
-  static int nodeNameToId(String name) {
-        final nameNative = name.toNativeUtf8(allocator: malloc);
-        try {
-            return _bindings.nodeNameToId(nameNative);
-        } finally {
-            malloc.free(nameNative);
-        }
-    }
-  static String nodeIdToName(int id) {
-        final buffer = malloc<Uint8>(1024).cast<Utf8>();
-        try {
-            _bindings.nodeIdToName(id, buffer, 1024);
-            return buffer.toDartString();
-        } finally {
-            malloc.free(buffer);
-        }
-    }
+  static String idToName(int id) {
+      final str = ffiBindings.idToName(id);
+      if (str == nullptr) {
+          throw Exception('Failed to convert id $id to name');
+      }
+      try {
+          return str.toDartString();
+      } finally {
+          ffiBindings.stringDestroy(str);
+      }
+  }
 
-  static final Finalizer<WingConsole> _finalizer =
-      Finalizer((console) => console._close());
+  static int idToParent(int id) {
+      return ffiBindings.idToParent(id);
+  }
 
-  WingConsole._fromNative(this._console);
+  static NodeType idToType(int id) {
+      return NodeType.values[ffiBindings.idToType(id)];
+  }
+
+  static (String, int) parseId(String id) {
+      final idNative = id.toNativeUtf8(allocator: malloc);
+      try {
+          Pointer<Pointer<Utf8>> outName = malloc<Pointer<Utf8>>(1);
+          Pointer<Int32> outId = malloc<Int32>(1);
+
+          outName.value = nullptr;
+          try {
+              int ret = ffiBindings.parseId(idNative, outName, outId);
+              if (ret != 0) {
+                  return (outName.value.toDartString(), outId.value);
+              } else {
+                  throw Exception('Failed to parse id $id');
+              }
+          } finally {
+              if (outName.value != nullptr) { ffiBindings.stringDestroy(outName.value); }
+              malloc.free(outName);
+              malloc.free(outId);
+          }
+      } finally {
+          malloc.free(idNative);
+      }
+  }
 
   factory WingConsole.connect(String ip) {
       final ipNative = ip.toNativeUtf8(allocator: malloc);
       try {
-      var c = _bindings.consoleConnect(ipNative);
+      var c = ffiBindings.consoleConnect(ipNative);
           return WingConsole._fromNative(c);
       } finally {
           malloc.free(ipNative);
       }
   }
 
-  void _close() {
-      _bindings.consoleDestroy(_console);
-      _finalizer.detach(this);
-  }
-
-  void read() async {
-      final receivePort = ReceivePort();
-      receivePort.listen((message) {
-        if (message is IsolateMessageRequestEnd) {
-            _cbRequestEnd?.call();
-        } else if (message is IsolateMessageNodeDefinition) {
-            _cbNodeDefinition?.call(message.def);
-        } else if (message is IsolateMessageNodeData) {
-            _cbNodeData?.call(message.id, message.data);
-        } else {
-            throw UnimplementedError();
-        }
-      });
-      await Isolate.spawn<WingReadIsolate>(_task, WingReadIsolate(_console, receivePort.sendPort));
-  }
-
-  void requestNodeData(int id) {
-      _bindings.consoleRequestNodeData(_console, id);
+  Response? read() {
+      final r = ffiBindings.consoleRead(_console);
+      if (r == nullptr) {
+          return null;
+      }
+      return Response.fromNative(r);
   }
 
   void setString(int id, String value) {
       final valueNative = value.toNativeUtf8(allocator: malloc);
       try {
-          _bindings.consoleSetString(_console, id, valueNative);
+          if (ffiBindings.consoleSetString(_console, id, valueNative) != 0) throw Exception('Failed to set string');
       } finally {
           malloc.free(valueNative);
       }
   }
 
   void setFloat(int id, double value) {
-      _bindings.consoleSetFloat(_console, id, value);
+      if (ffiBindings.consoleSetFloat(_console, id, value) != 0) throw Exception('Failed to set float');
   }
 
   void setInt(int id, int value) {
-      _bindings.consoleSetInt(_console, id, value);
+      if (ffiBindings.consoleSetInt(_console, id, value) != 0) throw Exception('Failed to set int');
   }
 
-  void setRequestEndCallback(void Function() callback) {
-      _cbRequestEnd = callback;
+  void requestNodeData(int id) {
+      if (ffiBindings.consoleRequestNodeData(_console, id) != 0) throw Exception('Failed to request node data');
   }
 
-  void setNodeDefinitionCallback(void Function(NodeDefinition) callback) {
-      _cbNodeDefinition = callback;
+  void requestNodeDef(int id) {
+      if (ffiBindings.consoleRequestNodeDef(_console, id) != 0) throw Exception('Failed to request node def');
   }
 
-  void setNodeDataCallback(void Function(int, NodeData) callback) {
-      _cbNodeData = callback;
-  }
 }

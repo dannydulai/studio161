@@ -21,8 +21,8 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
-		303653442D46FA47004F0C03 /* libwing.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 303653432D46FA47004F0C03 /* libwing.dylib */; };
-		303653452D46FA52004F0C03 /* libwing.dylib in Bundle Framework */ = {isa = PBXBuildFile; fileRef = 303653432D46FA47004F0C03 /* libwing.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		303653442D46FA47004F0C03 /* liblibwing.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 303653432D46FA47004F0C03 /* liblibwing.dylib */; };
+		303653452D46FA52004F0C03 /* liblibwing.dylib in Bundle Framework */ = {isa = PBXBuildFile; fileRef = 303653432D46FA47004F0C03 /* liblibwing.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		331C80D8294CF71000263BE5 /* RunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331C80D7294CF71000263BE5 /* RunnerTests.swift */; };
 		335BBD1B22A9A15E00E9071D /* GeneratedPluginRegistrant.swift in Sources */ = {isa = PBXBuildFile; fileRef = 335BBD1A22A9A15E00E9071D /* GeneratedPluginRegistrant.swift */; };
 		33CC10F12044A3C60003C045 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33CC10F02044A3C60003C045 /* AppDelegate.swift */; };
@@ -57,7 +57,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				303653452D46FA52004F0C03 /* libwing.dylib in Bundle Framework */,
+				303653452D46FA52004F0C03 /* liblibwing.dylib in Bundle Framework */,
 			);
 			name = "Bundle Framework";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -65,7 +65,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		303653432D46FA47004F0C03 /* libwing.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libwing.dylib; path = /Users/danny/work/libwing/build/libwing.dylib; sourceTree = "<absolute>"; };
+		303653432D46FA47004F0C03 /* liblibwing.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = liblibwing.dylib; path = /Users/danny/work/libwing/target/debug/liblibwing.dylib; sourceTree = "<absolute>"; };
 		331C80D5294CF71000263BE5 /* RunnerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RunnerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		331C80D7294CF71000263BE5 /* RunnerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunnerTests.swift; sourceTree = "<group>"; };
 		333000ED22D3DE5D00554162 /* Warnings.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Warnings.xcconfig; sourceTree = "<group>"; };
@@ -108,7 +108,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				56F7E8069CA54998C5E752F3 /* Pods_Runner.framework in Frameworks */,
-				303653442D46FA47004F0C03 /* libwing.dylib in Frameworks */,
+				303653442D46FA47004F0C03 /* liblibwing.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -208,7 +208,7 @@
 			children = (
 				BB0B7B89F0F499471605A653 /* Pods_Runner.framework */,
 				8DAC081FDCCAB8757568435E /* Pods_RunnerTests.framework */,
-				303653432D46FA47004F0C03 /* libwing.dylib */,
+				303653432D46FA47004F0C03 /* liblibwing.dylib */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -570,7 +570,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Runner",
 					"$(PROJECT_DIR)",
-					"$(PROJECT_DIR)/../../libwing/build",
+					"$(PROJECT_DIR)/../../libwing/target/debug",
 				);
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_VERSION = 5.0;
@@ -708,7 +708,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Runner",
 					"$(PROJECT_DIR)",
-					"$(PROJECT_DIR)/../../libwing/build",
+					"$(PROJECT_DIR)/../../libwing/target/debug",
 				);
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -734,7 +734,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Runner",
 					"$(PROJECT_DIR)",
-					"$(PROJECT_DIR)/../../libwing/build",
+					"$(PROJECT_DIR)/../../libwing/target/debug",
 				);
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_VERSION = 5.0;

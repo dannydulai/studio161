@@ -2,6 +2,7 @@ import "dart:convert";
 import "dart:io";
 import "package:flutter/material.dart";
 import "package:provider/provider.dart";
+import 'package:flutter_svg/flutter_svg.dart';
 
 import "wing_bridge.dart";
 import "mixer_state.dart";
@@ -23,6 +24,8 @@ class MixerOutput {
   final String outputSof;
   final int wingPropLevel;
   final int wingPropMute;
+  String? icon;
+  double? iconScale;
 
   double level = 0.0;
   bool enabled = false;
@@ -37,6 +40,8 @@ class MixerOutput {
     required this.outputSof,
     required this.wingPropLevel,
     required this.wingPropMute,
+    this.icon,
+    this.iconScale,
   });
 
   factory MixerOutput.fromJson(Map<String, dynamic> json) {
@@ -58,11 +63,13 @@ class MixerOutput {
     return MixerOutput._(
       id: json["id"],
       name: json["name"],
+      icon: json["icon"],
+      iconScale: json["iconScale"],
       color: HexColor.fromHex(json["color"]),
       output: output,
       outputSof: outputSof,
-      wingPropLevel: WingConsole.nodeNameToId("/$output/fdr"),
-      wingPropMute: WingConsole.nodeNameToId("/$output/mute"),
+      wingPropLevel: WingConsole.nameToId("/$output/fdr"),
+      wingPropMute: WingConsole.nameToId("/$output/mute"),
     );
   }
 
@@ -95,6 +102,7 @@ class MixerOutputSource {
   final int wingPropLevel;
   final int wingPropSend;
 
+  int fx = 0;
   double level = 0.0;
   bool enabled = false;
 
@@ -111,6 +119,14 @@ class MixerOutputSource {
     _mixerState.signal();
   }
 
+  void setLevel(double val) {
+    if (val != -144) {
+      val = val.clamp(-90.0, 10.0);
+    }
+    level = val;
+    _c.setFloat(wingPropLevel, level);
+    _mixerState.signal();
+  }
   void changeLevel(double val) {
     if (level == -144 && val < 0) {
       return;
@@ -133,6 +149,8 @@ class MixerInput {
   final String name;
   final Color color;
   final int channel;
+  String? icon;
+  double? iconScale;
 
   int fx = 0;
 
@@ -141,12 +159,16 @@ class MixerInput {
     required this.name,
     required this.color,
     required this.channel,
+    this.icon,
+    this.iconScale,
   });
 
   factory MixerInput.fromJson(Map<String, dynamic> json) {
     return MixerInput._(
       id: json["id"],
       name: json["name"],
+      icon: json["icon"],
+      iconScale: json["iconScale"],
       color: HexColor.fromHex(json["color"]),
       channel: json["channel"] as int,
     );
@@ -161,7 +183,6 @@ void main() async {
   print("current dir: ${Directory.current.path}");
 
   WidgetsFlutterBinding.ensureInitialized();
-  WingConsole.nodeInitMap("wing-schema.map");
 
   var consoles = WingDiscover.scan();
   for (final element in consoles) {
@@ -188,25 +209,25 @@ void main() async {
       output.sources[input.id] = MixerOutputSource(
           output: output,
           input: input,
-          wingPropLevel: WingConsole.nodeNameToId(
+          wingPropLevel: WingConsole.nameToId(
               "/ch/${input.channel}/${output.outputSof}/lvl"),
-          wingPropSend: WingConsole.nodeNameToId(
+          wingPropSend: WingConsole.nameToId(
               "/ch/${input.channel}/${output.outputSof}/on"));
     }
   });
 
   for (final output in mixerOutputs.values) {
-    _c.requestNodeData(WingConsole.nodeNameToId("/${output.output}/fdr"));
-    _c.requestNodeData(WingConsole.nodeNameToId("/${output.output}/mute"));
+    _c.requestNodeData(WingConsole.nameToId("/${output.output}/fdr"));
+    _c.requestNodeData(WingConsole.nameToId("/${output.output}/mute"));
     for (final input in output.sources.values.map((source) => source.input)) {
-      _c.requestNodeData(WingConsole.nodeNameToId(
+      _c.requestNodeData(WingConsole.nameToId(
           "/ch/${input.channel}/${output.outputSof}/on"));
-      _c.requestNodeData(WingConsole.nodeNameToId(
+      _c.requestNodeData(WingConsole.nameToId(
           "/ch/${input.channel}/${output.outputSof}/lvl"));
     }
   }
 
-  _c.read();
+  _mixerState.read();
   runApp(ChangeNotifierProvider.value(
     value: _mixerState,
     child: const MyApp(),
@@ -242,8 +263,8 @@ class _MyHomePageState extends State<HomePage> {
     return Scaffold(
       body: Container(
         color: Colors.black,
-        width: 1280,
-        height: 400,
+        width: 960,
+        height: 600,
         child: MainBar(),
       ),
     );
@@ -278,221 +299,193 @@ class _MainBarState extends State<MainBar> {
         children: [
           Container(
             color: Colors.black,
-            child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              // the output list
-              Container(
-              padding: EdgeInsets.only(right: 5),
-                child: Column(spacing: 5, children: [
-                  ...mixerOutputs.values.map((output) => Expanded(
-                        child: GestureDetector(
-                          onTap: () {
-                            if (output.id == selectedOutput.id) {
-                              selectedOutput.toggleEnabled();
-                            } else {
-                              selectedOutput = output;
-                              setState(() {});
-                            }
-                          },
-                          child: Column(
-                            children: [
-                              Expanded(
-                                child: Container(
-                                  alignment: Alignment.center,
-                                  decoration: BoxDecoration(
-                                    color: output.id == selectedOutput.id ? output.color : Colors.black,
-                                    border: Border.all(
-                                      color: output.color,
-                                      width: 2,
-                                    ),
-                                  ),
-                                  width: 120,
-                                  child: Stack(
-                                      fit: StackFit.expand,
-                                    children: [
-                                      Positioned(
-                                        bottom: 0,
-                                        right: 0,
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(4.0),
-                                          child: Text(
-                                            "${output.level == -144.0 ? "-∞" : output.level.toStringAsFixed(1)} dB",
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.bold,
-                                              color: output.id == selectedOutput.id ? Colors.black : output.color,
-                                            ),
-                                            textAlign: TextAlign.right,
-                                          ),
-                                        ),
-                                      ),
-                                      Padding(
-                                        padding: const EdgeInsets.all(8.0),
-                                        child: Text(
-                                          output.name,
-                                          style: TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.bold,
-                                            color: output.id == selectedOutput.id ? Colors.black : output.color,
-                                          ),
-                                          textAlign: TextAlign.left,
-                                        ),
-                                      ),
-                                      if (!output.enabled)
-                                        Positioned(
-                                        bottom: 0,
-                                        left: 0,
-                                          child: Container(
-                                            height: 30,
-                                            width: 30,
-                                            decoration: BoxDecoration(
-                                              gradient: LinearGradient(
-                                                stops: [.5, .5],
-                                                begin: Alignment.bottomLeft,
-                                                end: Alignment.topRight,
-                                                colors: [
-                                                  HexColor.fromHex("#ff4040"),
-                                                  Colors.transparent, // top Right part
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ) as Widget,
-                      )),
-                ]),
-              ),
-              Expanded(
-                // the output controls + source list
-                child: Column(children: [
-                  // the topbar
-                  Container(
-                  color: selectedOutput.color,
-                    child: Row(
-                      children: [
-                        GestureDetector(
-                          onTap: () {
-                            selectedOutput.toggleEnabled();
-                          },
-                          child: Container(
-                            margin: EdgeInsets.only(top: 10, bottom: 10, left: 30, right: 10),
-                            height: 30,
-                            child: Container(
-                              width: 100,
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                color: selectedOutput.enabled ? Colors.transparent : HexColor.fromHex("#ff4040"),
-                                border: Border.all(color: Colors.black, width: 2),
-                              ),
-                              child: Text(
-                                selectedOutput.enabled ? "MUTE" : "MUTED",
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                  color: Colors.black,
-                                ),
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                          ),
-                        ),
-                        Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // the output list
+                Row(
+                  spacing: 3,
+                  children: [
+                    ...mixerOutputs.values.map((output) => Expanded(
                           child: GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onPanUpdate: (details) {
-                              selectedOutput.changeLevel(details.delta.dx / 40.0);
+                            onTap: () {
+                              if (output.id == selectedOutput.id) {
+                                selectedOutput.toggleEnabled();
+                              } else {
+                                selectedOutput = output;
+                                setState(() {});
+                              }
                             },
                             child: Container(
-                              padding: EdgeInsets.only(top: 10, bottom: 10, left: 10, right: 30),
-                              child: Column(children: [
-                                SizedBox(
-                                  height: 30,
-                                  child: LayoutBuilder(builder: (BuildContext context, BoxConstraints constraints) {
-                                    return Stack(alignment: Alignment.center, children: [
-                                      Positioned(
-                                        top: 0,
-                                        bottom: 0,
-                                        left: 0,
-                                        right: 0,
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            border: Border.all(
-                                              color: Colors.black,
-                                              width: 1,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      Positioned(
-                                        top: 1,
-                                        bottom: 1,
-                                        left: 1,
-                                        right: 1 + ((constraints.maxWidth - 2) * (1.0 - pct)),
-                                        child: Container(
-                                          color: selectedOutput.color.addLightness(-0.1),
-                                        ),
-                                      ),
-                                      Positioned(
-                                        top: 0,
-                                        bottom: 0,
-                                        left: 10,
-                                        child: Text(
-                                          "${selectedOutput.level == -144.0 ? "-∞" : selectedOutput.level.toStringAsFixed(1)} dB",
-                                          style: const TextStyle(
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                          textAlign: TextAlign.right,
-                                        ),
-                                      ),
-                                    ]);
-                                  }),
+                              margin: EdgeInsets.only(top: 4),
+                              decoration: BoxDecoration(
+                                color: output.id == selectedOutput.id ? output.color : Colors.black,
+                                borderRadius: BorderRadius.only(
+                                  topLeft: Radius.circular(10),
+                                  topRight: Radius.circular(10),
                                 ),
-                              ]),
+                                border: Border(
+                                  top: BorderSide(color: output.color, width: 2),
+                                  left: BorderSide(color: output.color, width: 2),
+                                  right: BorderSide(color: output.color, width: 2),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  if (output.icon != null)
+                                    Padding(
+                                      padding: EdgeInsets.only(top: 4, bottom: 4, left: 8),
+                                      child: SvgPicture.file(
+                                        File(output.icon!),
+                                        height: 25 * (output.iconScale ?? 1.0),
+                                        colorFilter: ColorFilter.mode(
+                                          output.id == selectedOutput.id ? Colors.black : output.color,
+                                          BlendMode.srcIn,
+                                        ),
+                                      ),
+                                    ),
+                                  Expanded(
+                                    child: Padding(
+                                      padding: EdgeInsets.only(top: 4, bottom: 4, left: 8),
+                                      child: Text(
+                                        output.name,
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                          color: output.id == selectedOutput.id ? Colors.black : output.color,
+                                        ),
+                                        textAlign: TextAlign.left,
+                                      ),
+                                    ),
+                                  ),
+                                  if (!output.enabled)
+                                    Padding(
+                                        padding: EdgeInsets.only(right: 8),
+                                        child: Container(
+                                          height: 10,
+                                          width: 10,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: HexColor.fromHex("#ff4040"),
+                                          ),
+                                        ))
+                                ],
+                              ),
+                            ),
+                          ) as Widget,
+                        )),
+                  ],
+                ),
+                Container(
+                  color: selectedOutput.color,
+                  child: Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          selectedOutput.toggleEnabled();
+                        },
+                        child: Container(
+                          margin: EdgeInsets.only(top: 20, bottom: 20, left: 30, right: 10),
+                          height: 30,
+                          child: Container(
+                            width: 100,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: selectedOutput.enabled ? Colors.transparent : HexColor.fromHex("#ff4040"),
+                              border: Border.all(color: Colors.black, width: 2),
+                            ),
+                            child: Text(
+                              selectedOutput.enabled ? "MUTE" : "MUTED",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                                color: Colors.black,
+                              ),
+                              textAlign: TextAlign.center,
                             ),
                           ),
                         ),
-                      ],
-                    ),
-                  ),
-                  Expanded(
-                    child: Center(
-                      child: Wrap(
-                        spacing: 10,
-                        runSpacing: 10,
-                        children: selectedOutput.sources.values
-                            .map(
-                              (source) => ClickDragButton(
-                              width: 250,
-                              height: 60,
-                                name: source.input.name,
-                                color: source.input.color,
-                                enabled: source.enabled,
-                                level: source.level,
-                                onTap: () {
-                                  source.toggleEnabled();
-                                },
-                                onLongPress: () {
-                                    selectedSource = source;
-                                    setState(() {});
-                                },
-                                onDrag: (val) {
-                                  source.changeLevel(val);
-                                },
-                              ) as Widget,
-                            )
-                            .toList(),
                       ),
+                      Expanded(
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onPanUpdate: (details) {
+                            selectedOutput.changeLevel(details.delta.dx / 40.0);
+                          },
+                          child: Container(
+                            padding: EdgeInsets.only(top: 20, bottom: 20, left: 10, right: 30),
+                            child: Column(children: [
+                              SizedBox(
+                                height: 30,
+                                child: LayoutBuilder(builder: (BuildContext context, BoxConstraints constraints) {
+                                  return Stack(alignment: Alignment.center, children: [
+                                    Positioned(
+                                      top: 0,
+                                      bottom: 0,
+                                      left: 0,
+                                      right: 0,
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          border: Border.all(
+                                            color: Colors.black,
+                                            width: 1,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    Positioned(
+                                      top: 1,
+                                      bottom: 1,
+                                      left: 1,
+                                      right: 1 + ((constraints.maxWidth - 2) * (1.0 - pct)),
+                                      child: Container(
+                                        color: selectedOutput.color.addLightness(-0.1),
+                                      ),
+                                    ),
+                                    Positioned(
+                                      top: 0,
+                                      bottom: 0,
+                                      left: 10,
+                                      child: Text(
+                                        "${selectedOutput.level == -144.0 ? "-∞" : selectedOutput.level.toStringAsFixed(1)} dB",
+                                        style: const TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                        textAlign: TextAlign.right,
+                                      ),
+                                    ),
+                                  ]);
+                                }),
+                              ),
+                            ]),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: Center(
+                    child: Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      children: selectedOutput.sources.values
+                          .map(
+                            (source) => SourceTile(
+                              source: source,
+                              onLongPress: () {
+                                selectedSource = source;
+                                setState(() {});
+                              },
+                            ) as Widget,
+                          )
+                          .toList(),
                     ),
                   ),
-                ]),
-              ),
-            ]),
+                ),
+              ],
+            ),
           ),
           if (selectedSource != null)
             GestureDetector(
@@ -502,27 +495,88 @@ class _MainBarState extends State<MainBar> {
                 setState(() {});
               },
               child: Container(
-                color: Colors.black.withValues(alpha: 0.5),
+                color: Colors.black.withValues(alpha: 0.7),
                 child: Center(
-                  child: Container(
-                    width: 900,
-                    height: 220,
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: Colors.grey,
-                        width: 2,
+                  child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  spacing: 10,
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          selectedSource!.setLevel(0);
+                          selectedSource = null;
+                          setState(() {});
+                        },
+                        child: Container(
+                          margin: EdgeInsets.only(right: 10), // extra ten here between this and the FX buttons
+                          width: 200,
+                          height: 60,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: Colors.white,
+                              width: 3,
+                            ),
+                            color: Colors.grey,
+                          ),
+                          child: Text(
+                            "Reset to 0.0 dB",
+                            style: TextStyle(
+                              fontSize: 20,
+                              color: Colors.black,
+                            ),
+                          ),
+                        ),
                       ),
-                      color: Colors.black,
-                    ),
-                    child: Row(
-                      children: [
-                        Text("None"),
-                        Text("FX1"),
-                        Text("FX2"),
-                        Text("FX3"),
-                        Text("FX4"),
-                      ],
-                    ),
+                        ...[1, 2, 3].map(
+                        (fx) => GestureDetector(
+                          onTap: () {
+                            if (selectedSource!.fx == fx) {
+                              selectedSource!.fx = 0;
+                            } else {
+                              selectedSource!.fx = fx;
+                            }
+                            setState(() {});
+                          },
+                          child: Container(
+                            width: 200,
+                            height: 60,
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: Colors.white,
+                                width: 3,
+                              ),
+                              color: selectedSource!.fx == fx ? Colors.green : Colors.black,
+                            ),
+                            child: Stack(
+                            alignment: Alignment.center,
+                              children: [
+                                if (selectedSource!.fx == fx)
+                                  Positioned(
+                                    top: 0,
+                                    bottom: 0,
+                                    right: 12,
+                                    child: Icon(
+                                      Icons.check,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                Text(
+                                  "FX $fx",
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    color: Colors.white,
+                                    fontWeight: selectedSource!.fx == fx ? FontWeight.bold : null,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
