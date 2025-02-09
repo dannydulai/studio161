@@ -79,7 +79,7 @@ class MixerState extends ChangeNotifier {
       }
 
       if (changed) {
-        print("notifyListeners");
+        // print("notifyListeners");
         notifyListeners();
       }
     }
