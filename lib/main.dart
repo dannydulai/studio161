@@ -1,7 +1,7 @@
-import 'package:flutter/services.dart' show rootBundle;
-
+import 'package:flutter/services.dart'; // For `SystemChrome` and `rootBundle`
 import "dart:convert";
 import "dart:io";
+import "dart:ui";
 import "package:flutter/material.dart";
 import "package:provider/provider.dart";
 import 'package:flutter_svg/flutter_svg.dart';
@@ -104,7 +104,6 @@ class MixerOutputSource {
   final int wingPropLevel;
   final int wingPropSend;
 
-  int fx = 0;
   double level = 0.0;
   bool enabled = false;
 
@@ -181,10 +180,30 @@ Map<String, MixerOutput> mixerOutputs = {};
 Map<String, MixerInput> mixerInputs = {};
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+
+FlutterView view = WidgetsBinding.instance.platformDispatcher.views.first;
+
+// Dimensions in physical pixels (px)
+Size size = view.physicalSize;
+double width = size.width;
+double height = size.height;
+
+print("Width: $width, Height: $height");
+// Dimensions in logical pixels (dp)
+Size lsize = view.physicalSize / view.devicePixelRatio;
+double lwidth = lsize.width;
+double lheight = lsize.height;
+
+print("LWidth: $lwidth, LHeight: $lheight");
+
   // ignore: avoid_print
   print("current dir: ${Directory.current.path}");
 
-  WidgetsFlutterBinding.ensureInitialized();
+  if (Platform.isAndroid) {
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
+  }
 
   var consoles = WingDiscover.scan();
   for (final element in consoles) {
@@ -336,8 +355,7 @@ class _MainBarState extends State<MainBar> {
                                   if (output.icon != null)
                                     Padding(
                                       padding: EdgeInsets.only(top: 4, bottom: 4, left: 8),
-                                      child: SvgPicture.file(
-                                        File(output.icon!),
+                                      child: SvgPicture.asset("icons/${output.icon!}",
                                         height: 25 * (output.iconScale ?? 1.0),
                                         colorFilter: ColorFilter.mode(
                                           output.id == selectedOutput.id ? Colors.black : output.color,
@@ -533,10 +551,10 @@ class _MainBarState extends State<MainBar> {
                         ...[1, 2, 3].map(
                         (fx) => GestureDetector(
                           onTap: () {
-                            if (selectedSource!.fx == fx) {
-                              selectedSource!.fx = 0;
+                            if (selectedSource!.input.fx == fx) {
+                              selectedSource!.input.fx = 0;
                             } else {
-                              selectedSource!.fx = fx;
+                              selectedSource!.input.fx = fx;
                             }
                             setState(() {});
                           },
@@ -548,12 +566,12 @@ class _MainBarState extends State<MainBar> {
                                 color: Colors.white,
                                 width: 3,
                               ),
-                              color: selectedSource!.fx == fx ? Colors.green : Colors.black,
+                              color: selectedSource!.input.fx == fx ? Colors.green : Colors.black,
                             ),
                             child: Stack(
                             alignment: Alignment.center,
                               children: [
-                                if (selectedSource!.fx == fx)
+                                if (selectedSource!.input.fx == fx)
                                   Positioned(
                                     top: 0,
                                     bottom: 0,
@@ -568,7 +586,7 @@ class _MainBarState extends State<MainBar> {
                                   style: TextStyle(
                                     fontSize: 20,
                                     color: Colors.white,
-                                    fontWeight: selectedSource!.fx == fx ? FontWeight.bold : null,
+                                    fontWeight: selectedSource!.input.fx == fx ? FontWeight.bold : null,
                                   ),
                                   textAlign: TextAlign.center,
                                 ),

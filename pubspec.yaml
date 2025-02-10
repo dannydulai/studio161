@@ -64,8 +64,17 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
       - config.json
-  #   - images/a_dot_burr.jpeg
-  #   - images/a_dot_ham.jpeg
+      - icons/barcelona.svg
+      - icons/cable.svg
+      - icons/drums.svg
+      - icons/guitar.svg
+      - icons/headphones.svg
+      - icons/laptop.svg
+      - icons/microphone.svg
+      - icons/midi.svg
+      - icons/pc.svg
+      - icons/piano.svg
+      - icons/speaker.svg
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

@@ -1,4 +1,3 @@
-import "dart:io";
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'let.dart';
@@ -8,8 +7,8 @@ class SourceTile extends StatefulWidget {
   const SourceTile({super.key, required this.source, required this.onLongPress});
   final MixerOutputSource source;
 
-  final double width = 220;
-  final double height = 110;
+  final double width = 200;
+  final double height = 90;
 
   final Function onLongPress;
 
@@ -32,8 +31,7 @@ class _SourceTileState extends State<SourceTile> {
               width: 30,
               height: 30,
               child: Center(
-                child: SvgPicture.file(
-                  File(widget.source.input.icon!),
+                child: SvgPicture.asset("icons/${widget.source.input.icon!}",
                   height: 30 * (widget.source.input.iconScale ?? 1.0),
                   colorFilter: ColorFilter.mode(
                     widget.source.enabled ? Colors.black : widget.source.input.color,
@@ -70,12 +68,12 @@ class _SourceTileState extends State<SourceTile> {
               textAlign: TextAlign.left,
             ),
           ),
-          if (widget.source.fx != 0)
+          if (widget.source.input.fx != 0)
             Expanded(
                 child: Padding(
                 padding: const EdgeInsets.only(right: 8.0),
                 child: Text(
-                    "FX ${widget.source.fx}",
+                    "FX ${widget.source.input.fx}",
                     style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,

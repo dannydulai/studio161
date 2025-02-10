@@ -5,7 +5,7 @@
             "name": "Room",
             "color": "#f0f0f0",
             "inputs": [ ],
-            "icon": "/Users/danny/Downloads/speaker-svgrepo-com.svg",
+            "icon": "speaker.svg",
             "main": 1
         },
         {
@@ -13,7 +13,7 @@
             "name": "Headphones",
             "color": "#f0f0f0",
             "inputs": [ ],
-            "icon": "/Users/danny/Downloads/piano-svgrepo-com.svg",
+            "icon": "piano.svg",
             "bus": 2
         },
         {
@@ -21,7 +21,7 @@
             "name": "Headphones",
             "color": "#f0f0f0",
             "inputs": [ ],
-            "icon": "/Users/danny/Downloads/drums-svgrepo-com.svg",
+            "icon": "drums.svg",
             "bus": 1
         },
         {
@@ -29,7 +29,7 @@
             "name": "Headphones",
             "color": "#f0f0f0",
             "inputs": [ ],
-            "icon": "/Users/danny/Downloads/noun-barcelona-chair-3221.svg",
+            "icon": "barcelona.svg",
             "bus": 3
         }
     ],
@@ -38,7 +38,7 @@
             "id": "cablered",
             "name": "Red Cable",
             "color": "#ff0000",
-            "icon": "/Users/danny/Downloads/audio-jack-connector-svgrepo-com.svg",
+            "icon": "cable.svg",
             "iconScale": 0.8,
             "channel": 4
         },
@@ -46,7 +46,7 @@
             "id": "cableyellow",
             "name": "Yellow Cable",
             "color": "#ffff00",
-            "icon": "/Users/danny/Downloads/audio-jack-connector-svgrepo-com.svg",
+            "icon": "cable.svg",
             "iconScale": 0.8,
             "channel": 5
         },
@@ -54,7 +54,7 @@
             "id": "cablewhite",
             "name": "White Cable",
             "color": "#ffffff",
-            "icon": "/Users/danny/Downloads/audio-jack-connector-svgrepo-com.svg",
+            "icon": "cable.svg",
             "iconScale": 0.9,
             "channel": 3
         },
@@ -62,7 +62,7 @@
             "id": "cablepurple",
             "name": "Purple Cable",
             "color": "#ff40ff",
-            "icon": "/Users/danny/Downloads/audio-jack-connector-svgrepo-com.svg",
+            "icon": "cable.svg",
             "iconScale": 0.9,
             "channel": 2
         },
@@ -70,35 +70,35 @@
             "id": "drums",
             "name": "Drums",
             "color": "#de3163",
-            "icon": "/Users/danny/Downloads/drums-svgrepo-com.svg",
+            "icon": "drums.svg",
             "channel": 6
         },
         {
             "id": "drumsdac",
             "name": "iPad",
             "color": "#de3163",
-            "icon": "/Users/danny/Downloads/drums-svgrepo-com.svg",
+            "icon": "drums.svg",
             "channel": 9
         },
         {
             "id": "piano",
             "name": "Piano",
             "color": "#0080fe",
-            "icon": "/Users/danny/Downloads/piano-svgrepo-com.svg",
+            "icon": "piano.svg",
             "channel": 7
         },
         {
             "id": "pianodac",
             "name": "iPad",
             "color": "#0080fe",
-            "icon": "/Users/danny/Downloads/piano-svgrepo-com.svg",
+            "icon": "piano.svg",
             "channel": 10
         },
         {
             "id": "mic",
             "name": "Microphone",
             "color": "#4cbb17",
-            "icon": "/Users/danny/Downloads/microphone-4-svgrepo-com.svg",
+            "icon": "microphone.svg",
             "iconScale": 0.7,
             "channel": 8
         },
@@ -106,14 +106,14 @@
             "id": "mac",
             "name": "Mac (Holo Audio)",
             "color": "#ffbf00",
-            "icon": "/Users/danny/Downloads/laptop-svgrepo-com.svg",
+            "icon": "laptop.svg",
             "channel": 1
         },
         {
             "id": "pc",
             "name": "PC (Main)",
             "color": "#ffbf00",
-            "icon": "/Users/danny/Downloads/pc-display-2-svgrepo-com.svg",
+            "icon": "pc.svg",
             "iconScale": 0.90,
             "channel": 15
         },
@@ -121,7 +121,7 @@
             "id": "pcmidi",
             "name": "PC (MIDI)",
             "color": "#ffbf00",
-            "icon": "/Users/danny/Downloads/midi-svgrepo-com.svg",
+            "icon": "midi.svg",
             "iconScale": 1.6,
             "channel": 11
         }
