@@ -1,16 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'mixer_io.dart';
 import 'let.dart';
-import 'main.dart';
 
 class SourceTile extends StatefulWidget {
-  const SourceTile({super.key, required this.source, required this.onLongPress});
-  final MixerOutputSource source;
+  const SourceTile({super.key, required this.source, this.onLongPress});
+  final MixerSource source;
 
-  final double width = 200;
-  final double height = 90;
-
-  final Function onLongPress;
+  final Function? onLongPress;
 
   @override
   State<SourceTile> createState() => _SourceTileState();
@@ -19,89 +16,170 @@ class SourceTile extends StatefulWidget {
 class _SourceTileState extends State<SourceTile> {
   double delta = 0.0;
 
-  Widget inside(double width) {
-    double pct = (((widget.source.level == -144.0 ? -90.0 : widget.source.level) + 90.0) / 100.0).clamp(0.0, 1.0);
+  Widget buildTileInside() {
+    if (widget.source is MixerInputSource) {
+      return buildInputTile(widget.source as MixerInputSource);
+    } else {
+      return buildFxTile(widget.source as MixerFxSource);
+    }
+  }
 
-    return Column(children: [
-      Row(children: [
-        if (widget.source.input.icon != null)
-          Padding(
-            padding: EdgeInsets.only(left: 8, right: 8, top: 8, bottom: 8),
-            child: SizedBox(
-              width: 30,
-              height: 30,
-              child: Center(
-                child: SvgPicture.asset("icons/${widget.source.input.icon!}",
-                  height: 30 * (widget.source.input.iconScale ?? 1.0),
-                  colorFilter: ColorFilter.mode(
-                    widget.source.enabled ? Colors.black : widget.source.input.color,
-                    BlendMode.srcIn,
+  buildFxTile(MixerFxSource fxsrc) {
+    return SizedBox(
+      height: 50,
+      child: Column(children: [
+        Row(children: [
+          if (fxsrc.icon != null)
+            Padding(
+              padding: EdgeInsets.only(left: 8, right: 8, top: 8, bottom: 8),
+              child: SizedBox(
+                width: 30,
+                height: 30,
+                child: Center(
+                  child: SvgPicture.asset(
+                    "icons/${fxsrc.icon!}",
+                    height: 30 * (fxsrc.iconScale ?? 1.0),
+                    colorFilter: ColorFilter.mode(
+                      fxsrc.enabled ? Colors.black : fxsrc.color,
+                      BlendMode.srcIn,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-        Expanded(
-          child: Text(
-            widget.source.input.name,
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-              color: widget.source.enabled ? Colors.black : widget.source.input.color,
-            ),
-            textAlign: TextAlign.left,
-          ),
-        ),
-      ]),
-      Expanded(child: Container()),
-      Row(
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(left: 8.0),
+          Expanded(
             child: Text(
-              "${widget.source.level == -144.0 ? "-∞" : widget.source.level.toStringAsFixed(1)} dB",
+              fxsrc.name,
               style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: widget.source.enabled ? Colors.black : widget.source.input.color,
+                fontSize: 25,
+                color: fxsrc.enabled ? Colors.black : fxsrc.color,
               ),
               textAlign: TextAlign.left,
             ),
           ),
-          if (widget.source.input.fx != 0)
-            Expanded(
-                child: Padding(
-                padding: const EdgeInsets.only(right: 8.0),
-                child: Text(
-                    "FX ${widget.source.input.fx}",
-                    style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: widget.source.enabled ? Colors.black : widget.source.input.color,
+        ]),
+      ]),
+    );
+  }
+
+  List<MixerFx> whichFx(MixerInput input) {
+    List<MixerFx> ret = [];
+    for (final fx in mixerFxs) {
+      for (final src in fx.sources) {
+        if (src.enabled && src is MixerInputSource && src.input == input) {
+          ret.add(fx);
+        }
+      }
+    }
+    return ret;
+  }
+
+  buildInputTile(MixerInputSource isrc) {
+    double pct = (((isrc.level == -144.0 ? -90.0 : isrc.level) + 90.0) / 100.0).clamp(0.0, 1.0);
+    final fx = whichFx(isrc.input);
+
+    return SizedBox(
+      height: 100,
+      child: Column(children: [
+        Row(children: [
+          if (isrc.icon != null)
+            Padding(
+              padding: EdgeInsets.only(left: 8, right: 8, top: 8, bottom: 8),
+              child: SizedBox(
+                width: 30,
+                height: 30,
+                child: Center(
+                  child: SvgPicture.asset(
+                    "icons/${isrc.icon!}",
+                    height: 30 * (isrc.iconScale ?? 1.0),
+                    colorFilter: ColorFilter.mode(
+                      isrc.enabled ? Colors.black : isrc.color,
+                      BlendMode.srcIn,
                     ),
-                    textAlign: TextAlign.right,
+                  ),
                 ),
-                ),
+              ),
             ),
-        ],
-      ),
-      SizedBox(
-        height: 7,
-        child: Stack(children: [
-          Positioned(
-            top: 0,
-            bottom: 0,
-            left: 0,
-            width: width * pct,
-            child: Container(
-              color: widget.source.enabled
-                  ? widget.source.input.color.addLightness(0.4)
-                  : widget.source.input.color.addLightness(-0.3),
+          Expanded(
+            child: Text(
+              isrc.name,
+              style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: isrc.enabled ? Colors.black : isrc.color,
+              ),
+              textAlign: TextAlign.left,
             ),
           ),
         ]),
-      )
-    ]);
+        Expanded(child: Container()),
+        Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(left: 8.0),
+              child: Text(
+                "${isrc.level == -144.0 ? "-∞" : isrc.level.toStringAsFixed(1)} dB",
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: isrc.enabled ? Colors.black : isrc.color,
+                ),
+                textAlign: TextAlign.left,
+              ),
+            ),
+            if (fx.isNotEmpty) ...[
+              Expanded(child: Container()),
+              Padding(
+                padding: EdgeInsets.only(left: 12, right: 12, bottom: 2),
+                child: Row(
+                spacing: 4,
+                  children: [
+                    SizedBox(
+                      width: 30,
+                      height: 30,
+                      child: Center(
+                        child: SvgPicture.asset(
+                          "icons/fx.svg",
+                          height: 26,
+                          colorFilter: ColorFilter.mode(
+                            isrc.enabled ? Colors.black : isrc.color,
+                            BlendMode.srcIn,
+                          ),
+                        ),
+                      ),
+                    ),
+                    for (final fx in fx)
+                      Text(
+                        fx.name,
+                        style: TextStyle(
+                          fontSize: 22,
+                          color: isrc.enabled ? Colors.black : isrc.color,
+                        ),
+                      ),
+                  ]),
+              ),
+            ],
+          ],
+        ),
+        SizedBox(
+          height: 7,
+          child: LayoutBuilder(
+            builder: (context, constraints) => Stack(children: [
+              Positioned(
+                top: 0,
+                bottom: 0,
+                left: 0,
+                width: constraints.maxWidth * pct,
+                child: Container(
+                  color: isrc.enabled ? isrc.color.addLightness(0.4) : isrc.color.addLightness(-0.3),
+                ),
+              ),
+            ]),
+          ),
+        )
+      ]),
+    );
   }
 
   @override
@@ -110,28 +188,29 @@ class _SourceTileState extends State<SourceTile> {
       behavior: HitTestBehavior.opaque,
       child: Container(
         decoration: BoxDecoration(
-          color: widget.source.enabled ? widget.source.input.color : Colors.black,
+          color: widget.source.enabled ? widget.source.color : Colors.black,
           border: Border.all(
-            color: widget.source.enabled ? widget.source.input.color : widget.source.input.color.addLightness(-0.3),
+            color: widget.source.enabled ? widget.source.color : widget.source.color.addLightness(-0.3),
             width: 2,
           ),
         ),
-        height: widget.height,
-        width: widget.width,
-        child: inside(widget.width),
+        child: buildTileInside(),
       ),
       onHorizontalDragStart: (details) {
         delta = 0.0;
       },
       onHorizontalDragUpdate: (details) {
         delta += details.primaryDelta!;
-        widget.source.changeLevel(details.primaryDelta!/20);
+        if (widget.source is MixerInputSource) {
+            MixerInputSource isrc = widget.source as MixerInputSource;
+            isrc.changeLevel(details.primaryDelta!/20);
+        }
       },
       onTap: () {
         widget.source.toggleEnabled();
       },
       onLongPress: () {
-        widget.onLongPress();
+        widget.onLongPress?.call();
       },
     );
   }

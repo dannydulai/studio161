@@ -1,7 +1,6 @@
 import 'package:flutter/services.dart'; // For `SystemChrome` and `rootBundle`
 import "dart:convert";
 import "dart:io";
-import "dart:ui";
 import "package:flutter/material.dart";
 import "package:provider/provider.dart";
 import 'package:flutter_svg/flutter_svg.dart';
@@ -10,196 +9,34 @@ import "wing_bridge.dart";
 import "mixer_state.dart";
 import "buttons.dart";
 import "let.dart";
+import "mixer_io.dart";
 
-late WingConsole _c;
-late MixerState _mixerState;
+late WingConsole gConsole;
+late MixerState gMixerState;
 late Map<String, dynamic> config;
 
 typedef JList = List<dynamic>;
 typedef JMap = Map<String, dynamic>;
 
-class MixerOutput {
-  final String id;
-  final String name;
-  final Color color;
-  final String output;
-  final String outputSof;
-  final int wingPropLevel;
-  final int wingPropMute;
-  String? icon;
-  double? iconScale;
-
-  double level = 0.0;
-  bool enabled = false;
-
-  final Map<String, MixerOutputSource> sources = {};
-
-  MixerOutput._({
-    required this.id,
-    required this.name,
-    required this.color,
-    required this.output,
-    required this.outputSof,
-    required this.wingPropLevel,
-    required this.wingPropMute,
-    this.icon,
-    this.iconScale,
-  });
-
-  factory MixerOutput.fromJson(Map<String, dynamic> json) {
-    String output, outputSof;
-    if (!json.containsKey("id")) throw Exception("Invalid output definition -- must contain 'id'");
-    if (!json.containsKey("name")) throw Exception("Invalid output definition -- must contain 'name'");
-    if (!json.containsKey("color")) throw Exception("Invalid output definition -- must contain 'color'");
-
-    if (json.containsKey("bus")) {
-        output    = "bus/${json["bus"]}";
-        outputSof = "send/${json["bus"]}";
-    } else if (json.containsKey("main")) {
-        output    = "main/${json["main"]}";
-        outputSof = "main/${json["main"]}";
-    } else {
-        throw Exception("Invalid output definition for output ${json["id"]} -- must contain either 'bus' or 'main'");
-    }
-
-    return MixerOutput._(
-      id: json["id"],
-      name: json["name"],
-      icon: json["icon"],
-      iconScale: json["iconScale"],
-      color: HexColor.fromHex(json["color"]),
-      output: output,
-      outputSof: outputSof,
-      wingPropLevel: WingConsole.nameToId("/$output/fdr"),
-      wingPropMute: WingConsole.nameToId("/$output/mute"),
-    );
-  }
-
-  void toggleEnabled() {
-    enabled = !enabled;
-    _c.setInt(wingPropMute, enabled ? 0 : 1);
-    _mixerState.signal();
-  }
-
-  void changeLevel(double val) {
-    if (level == -144 && val < 0) {
-      return;
-    } else if (level == -144 && val >= 0) {
-      level = -90 + val;
-      level = level.clamp(-90.0, 10.0);
-    } else if (level == -90 && val < 0) {
-      level = -144;
-    } else {
-      level += val;
-      level = level.clamp(-90.0, 10.0);
-    }
-    _c.setFloat(wingPropLevel, level);
-    _mixerState.signal();
-  }
-}
-
-class MixerOutputSource {
-  final MixerOutput output;
-  final MixerInput input;
-  final int wingPropLevel;
-  final int wingPropSend;
-
-  double level = 0.0;
-  bool enabled = false;
-
-  MixerOutputSource({
-    required this.output,
-    required this.input,
-    required this.wingPropLevel,
-    required this.wingPropSend,
-  });
-
-  void toggleEnabled() {
-    enabled = !enabled;
-    _c.setInt(wingPropSend, enabled ? 1 : 0);
-    _mixerState.signal();
-  }
-
-  void setLevel(double val) {
-    if (val != -144) {
-      val = val.clamp(-90.0, 10.0);
-    }
-    level = val;
-    _c.setFloat(wingPropLevel, level);
-    _mixerState.signal();
-  }
-  void changeLevel(double val) {
-    if (level == -144 && val < 0) {
-      return;
-    } else if (level == -144 && val >= 0) {
-      level = -90 + val;
-      level = level.clamp(-90.0, 10.0);
-    } else if (level == -90 && val < 0) {
-      level = -144;
-    } else {
-      level += val;
-      level = level.clamp(-90.0, 10.0);
-    }
-    _c.setFloat(wingPropLevel, level);
-    _mixerState.signal();
-  }
-}
-
-class MixerInput {
-  final String id;
-  final String name;
-  final Color color;
-  final int channel;
-  String? icon;
-  double? iconScale;
-
-  int fx = 0;
-
-  MixerInput._({
-    required this.id,
-    required this.name,
-    required this.color,
-    required this.channel,
-    this.icon,
-    this.iconScale,
-  });
-
-  factory MixerInput.fromJson(Map<String, dynamic> json) {
-    return MixerInput._(
-      id: json["id"],
-      name: json["name"],
-      icon: json["icon"],
-      iconScale: json["iconScale"],
-      color: HexColor.fromHex(json["color"]),
-      channel: json["channel"] as int,
-    );
-  }
-}
-
-Map<String, MixerOutput> mixerOutputs = {};
-Map<String, MixerInput> mixerInputs = {};
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // FlutterView view = WidgetsBinding.instance.platformDispatcher.views.first;
+  //
+  // // Dimensions in physical pixels (px)
+  // Size size = view.physicalSize;
+  // double width = size.width;
+  // double height = size.height;
+  //
+  // print("Width: $width, Height: $height");
+  // // Dimensions in logical pixels (dp)
+  // Size lsize = view.physicalSize / view.devicePixelRatio;
+  // double lwidth = lsize.width;
+  // double lheight = lsize.height;
+  //
+  // print("LWidth: $lwidth, LHeight: $lheight");
 
-FlutterView view = WidgetsBinding.instance.platformDispatcher.views.first;
-
-// Dimensions in physical pixels (px)
-Size size = view.physicalSize;
-double width = size.width;
-double height = size.height;
-
-print("Width: $width, Height: $height");
-// Dimensions in logical pixels (dp)
-Size lsize = view.physicalSize / view.devicePixelRatio;
-double lwidth = lsize.width;
-double lheight = lsize.height;
-
-print("LWidth: $lwidth, LHeight: $lheight");
-
-  // ignore: avoid_print
-  print("current dir: ${Directory.current.path}");
+  //  print("current dir: ${Directory.current.path}");
 
   if (Platform.isAndroid) {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
@@ -207,49 +44,57 @@ print("LWidth: $lwidth, LHeight: $lheight");
 
   var consoles = WingDiscover.scan();
   for (final element in consoles) {
-      // ignore: avoid_print
+    // ignore: avoid_print
     print("${element.name} @ ${element.ip} [${element.model}/${element.serial}/${element.firmware}]");
   }
 
-  _c = WingConsole.connect(consoles[0].ip);
-  _mixerState = MixerState(_c);
+  gConsole = WingConsole.connect(consoles[0].ip);
+  gMixerState = MixerState(gConsole);
 
   config = jsonDecode(await rootBundle.loadString('config.json'));
 
-  (config["inputs"] as JList)
-      .map((input) => MixerInput.fromJson(input))
-      .forEach((input) {
-    mixerInputs[input.id] = input;
+  (config["fx"] as JList).map((fx) => MixerFx.fromJson(fx)).forEach((fx) {
+    mixerFxs.add(fx);
   });
-  (config["outputs"] as JList)
-      .map((output) => MixerOutput.fromJson(output))
-      .forEach((output) {
-    mixerOutputs[output.id] = output;
-    for (final input in mixerInputs.values) {
-      output.sources[input.id] = MixerOutputSource(
-          output: output,
-          input: input,
-          wingPropLevel: WingConsole.nameToId(
-              "/ch/${input.channel}/${output.outputSof}/lvl"),
-          wingPropSend: WingConsole.nameToId(
-              "/ch/${input.channel}/${output.outputSof}/on"));
+  (config["inputs"] as JList).map((input) => MixerInput.fromJson(input)).forEach((input) {
+    mixerInputs.add(input);
+  });
+  (config["outputs"] as JList).map((output) => MixerOutput.fromJson(output)).forEach((output) {
+    mixerOutputs.add(output);
+    for (final fx in mixerFxs) {
+      output.sources.add(MixerFxSource(
+        fx: fx,
+        output: output,
+        wingPropSend: WingConsole.nameToId("/${fx.bus}/${output.outputSof}/on"),
+      ));
+    }
+    for (final input in mixerInputs) {
+      output.sources.add(MixerInputSource(
+        output: output,
+        input: input,
+        wingPropSend: WingConsole.nameToId("/ch/${input.channel}/${output.outputSof}/on"),
+        wingPropLevel: WingConsole.nameToId("/ch/${input.channel}/${output.outputSof}/lvl"),
+      ));
     }
   });
-
-  for (final output in mixerOutputs.values) {
-    _c.requestNodeData(WingConsole.nameToId("/${output.output}/fdr"));
-    _c.requestNodeData(WingConsole.nameToId("/${output.output}/mute"));
-    for (final input in output.sources.values.map((source) => source.input)) {
-      _c.requestNodeData(WingConsole.nameToId(
-          "/ch/${input.channel}/${output.outputSof}/on"));
-      _c.requestNodeData(WingConsole.nameToId(
-          "/ch/${input.channel}/${output.outputSof}/lvl"));
+  for (final fx in mixerFxs) {
+    for (final input in mixerInputs) {
+      fx.sources.add(MixerInputSource(
+        output: fx,
+        input: input,
+        wingPropSend: WingConsole.nameToId("/ch/${input.channel}/${fx.outputSof}/on"),
+        wingPropLevel: WingConsole.nameToId("/ch/${input.channel}/${fx.outputSof}/lvl"),
+      ));
     }
   }
 
-  _mixerState.read();
+  for (final output in mixerOutputs) {
+    output.requestData();
+  }
+
+  gMixerState.read();
   runApp(ChangeNotifierProvider.value(
-    value: _mixerState,
+    value: gMixerState,
     child: const MyApp(),
   ));
 }
@@ -283,8 +128,8 @@ class _MyHomePageState extends State<HomePage> {
     return Scaffold(
       body: Container(
         color: Colors.black,
-        width: 960,
-        height: 600,
+        // width: 960,
+        // height: 600,
         child: MainBar(),
       ),
     );
@@ -300,20 +145,245 @@ class MainBar extends StatefulWidget {
 
 class _MainBarState extends State<MainBar> {
   int level = 0;
-  late MixerOutput selectedOutput;
-  MixerOutputSource? selectedSource;
+  late MixerBase selectedTab;
+  MixerInputSource? selectedSource;
 
   @override
   void initState() {
-    selectedOutput = mixerOutputs.values.first;
+    selectedTab = mixerOutputs.first;
     super.initState();
+  }
+
+  buildOutputTab(MixerOutput output) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          if (output.id == selectedTab.id) {
+            if (selectedTab is MixerOutput) {
+              (selectedTab as MixerOutput).toggleMute();
+            }
+          } else {
+            selectedTab = output;
+            setState(() {});
+          }
+        },
+        child: Container(
+          margin: EdgeInsets.only(top: 4),
+          decoration: BoxDecoration(
+            color: output.id == selectedTab.id ? output.color : Colors.black,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(10),
+              topRight: Radius.circular(10),
+            ),
+            border: Border(
+              top: BorderSide(color: output.color, width: 2),
+              left: BorderSide(color: output.color, width: 2),
+              right: BorderSide(color: output.color, width: 2),
+            ),
+          ),
+          child: Row(
+            children: [
+              if (output.icon != null)
+                Padding(
+                  padding: EdgeInsets.only(top: 4, bottom: 4, left: 8),
+                  child: SvgPicture.asset(
+                    "icons/${output.icon!}",
+                    height: 25 * (output.iconScale ?? 1.0),
+                    colorFilter: ColorFilter.mode(
+                      output.id == selectedTab.id ? Colors.black : output.color,
+                      BlendMode.srcIn,
+                    ),
+                  ),
+                ),
+              Expanded(
+                child: Padding(
+                  padding: EdgeInsets.only(top: 4, bottom: 4, left: 8),
+                  child: Text(
+                    output.name,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: output.id == selectedTab.id ? Colors.black : output.color,
+                    ),
+                    textAlign: TextAlign.left,
+                  ),
+                ),
+              ),
+              if (output.muted)
+                Padding(
+                  padding: EdgeInsets.only(right: 8),
+                  child: Container(
+                    height: 10,
+                    width: 10,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: HexColor.fromHex("#ff4040"),
+                    ),
+                  ),
+                )
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  buildFxTab(MixerFx fx) {
+    return GestureDetector(
+      onTap: () {
+        if (fx.id != selectedTab.id) {
+          selectedTab = fx;
+          setState(() {});
+        }
+      },
+      child: Container(
+        margin: EdgeInsets.only(top: 4),
+        decoration: BoxDecoration(
+          color: fx.id == selectedTab.id ? fx.color : Colors.black,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(10),
+            topRight: Radius.circular(10),
+          ),
+          border: Border(
+            top: BorderSide(color: fx.color, width: 2),
+            left: BorderSide(color: fx.color, width: 2),
+            right: BorderSide(color: fx.color, width: 2),
+          ),
+        ),
+        child: Padding(
+          padding: EdgeInsets.only(left: 12, right: 12),
+          child: Row(
+            spacing: 2,
+            children: [
+              SvgPicture.asset(
+                "icons/fx.svg",
+                height: 25,
+                colorFilter: ColorFilter.mode(
+                  fx.id == selectedTab.id ? Colors.black : fx.color,
+                  BlendMode.srcIn,
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.only(bottom: 1),
+                child: Text(
+                  fx.name,
+                  style: TextStyle(
+                    fontSize: 21,
+                    color: fx.id == selectedTab.id ? Colors.black : fx.color,
+                  ),
+                  textAlign: TextAlign.left,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  buildFxBar(MixerFx fx) {
+    return Container(
+      color: selectedTab.color,
+      height: 2,
+    );
+  }
+
+  buildOutputBar(MixerOutput output) {
+    double pct = (((output.level == -144.0 ? -90.0 : output.level) + 90.0) / 100.0).clamp(0.0, 1.0);
+    return Container(
+      color: selectedTab.color,
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: () {
+              (selectedTab as MixerOutput).toggleMute();
+            },
+            child: Container(
+              margin: EdgeInsets.only(top: 20, bottom: 20, left: 30, right: 10),
+              height: 30,
+              child: Container(
+                width: 100,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: (selectedTab as MixerOutput).muted ? HexColor.fromHex("#ff4040") : Colors.transparent,
+                  border: Border.all(color: Colors.black, width: 2),
+                ),
+                child: Text(
+                  (selectedTab as MixerOutput).muted ? "MUTED" : "MUTE",
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: Colors.black,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onPanUpdate: (details) {
+                (selectedTab as MixerOutput).changeLevel(by: details.delta.dx / 40.0);
+              },
+              child: Container(
+                padding: EdgeInsets.only(top: 20, bottom: 20, left: 10, right: 30),
+                child: Column(children: [
+                  SizedBox(
+                    height: 30,
+                    child: LayoutBuilder(builder: (BuildContext context, BoxConstraints constraints) {
+                      return Stack(alignment: Alignment.center, children: [
+                        Positioned(
+                          top: 0,
+                          bottom: 0,
+                          left: 0,
+                          right: 0,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              border: Border.all(
+                                color: Colors.black,
+                                width: 1,
+                              ),
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          top: 1,
+                          bottom: 1,
+                          left: 1,
+                          right: 1 + ((constraints.maxWidth - 2) * (1.0 - pct)),
+                          child: Container(
+                            color: selectedTab.color.addLightness(-0.1),
+                          ),
+                        ),
+                        Positioned(
+                          top: 0,
+                          bottom: 0,
+                          left: 10,
+                          child: Text(
+                            "${(selectedTab as MixerOutput).level == -144.0 ? "-∞" : (selectedTab as MixerOutput).level.toStringAsFixed(1)} dB",
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.right,
+                          ),
+                        ),
+                      ]);
+                    }),
+                  ),
+                ]),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Consumer<MixerState>(builder: (context, mixerState, child) {
-      double pct = (((selectedOutput.level == -144.0 ? -90.0 : selectedOutput.level) + 90.0) / 100.0).clamp(0.0, 1.0);
-
       return Stack(
       fit: StackFit.expand,
         children: [
@@ -326,181 +396,29 @@ class _MainBarState extends State<MainBar> {
                 Row(
                   spacing: 3,
                   children: [
-                    ...mixerOutputs.values.map((output) => Expanded(
-                          child: GestureDetector(
-                            onTap: () {
-                              if (output.id == selectedOutput.id) {
-                                selectedOutput.toggleEnabled();
-                              } else {
-                                selectedOutput = output;
-                                setState(() {});
-                              }
-                            },
-                            child: Container(
-                              margin: EdgeInsets.only(top: 4),
-                              decoration: BoxDecoration(
-                                color: output.id == selectedOutput.id ? output.color : Colors.black,
-                                borderRadius: BorderRadius.only(
-                                  topLeft: Radius.circular(10),
-                                  topRight: Radius.circular(10),
-                                ),
-                                border: Border(
-                                  top: BorderSide(color: output.color, width: 2),
-                                  left: BorderSide(color: output.color, width: 2),
-                                  right: BorderSide(color: output.color, width: 2),
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  if (output.icon != null)
-                                    Padding(
-                                      padding: EdgeInsets.only(top: 4, bottom: 4, left: 8),
-                                      child: SvgPicture.asset("icons/${output.icon!}",
-                                        height: 25 * (output.iconScale ?? 1.0),
-                                        colorFilter: ColorFilter.mode(
-                                          output.id == selectedOutput.id ? Colors.black : output.color,
-                                          BlendMode.srcIn,
-                                        ),
-                                      ),
-                                    ),
-                                  Expanded(
-                                    child: Padding(
-                                      padding: EdgeInsets.only(top: 4, bottom: 4, left: 8),
-                                      child: Text(
-                                        output.name,
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.bold,
-                                          color: output.id == selectedOutput.id ? Colors.black : output.color,
-                                        ),
-                                        textAlign: TextAlign.left,
-                                      ),
-                                    ),
-                                  ),
-                                  if (!output.enabled)
-                                    Padding(
-                                        padding: EdgeInsets.only(right: 8),
-                                        child: Container(
-                                          height: 10,
-                                          width: 10,
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: HexColor.fromHex("#ff4040"),
-                                          ),
-                                        ))
-                                ],
-                              ),
-                            ),
-                          ) as Widget,
-                        )),
+                    ...mixerOutputs.map((output) => buildOutputTab(output)),
+                    ...mixerFxs.map((fx) => buildFxTab(fx))
                   ],
                 ),
-                Container(
-                  color: selectedOutput.color,
-                  child: Row(
-                    children: [
-                      GestureDetector(
-                        onTap: () {
-                          selectedOutput.toggleEnabled();
-                        },
-                        child: Container(
-                          margin: EdgeInsets.only(top: 20, bottom: 20, left: 30, right: 10),
-                          height: 30,
-                          child: Container(
-                            width: 100,
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              color: selectedOutput.enabled ? Colors.transparent : HexColor.fromHex("#ff4040"),
-                              border: Border.all(color: Colors.black, width: 2),
-                            ),
-                            child: Text(
-                              selectedOutput.enabled ? "MUTE" : "MUTED",
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                                color: Colors.black,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onPanUpdate: (details) {
-                            selectedOutput.changeLevel(details.delta.dx / 40.0);
-                          },
-                          child: Container(
-                            padding: EdgeInsets.only(top: 20, bottom: 20, left: 10, right: 30),
-                            child: Column(children: [
-                              SizedBox(
-                                height: 30,
-                                child: LayoutBuilder(builder: (BuildContext context, BoxConstraints constraints) {
-                                  return Stack(alignment: Alignment.center, children: [
-                                    Positioned(
-                                      top: 0,
-                                      bottom: 0,
-                                      left: 0,
-                                      right: 0,
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          border: Border.all(
-                                            color: Colors.black,
-                                            width: 1,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                    Positioned(
-                                      top: 1,
-                                      bottom: 1,
-                                      left: 1,
-                                      right: 1 + ((constraints.maxWidth - 2) * (1.0 - pct)),
-                                      child: Container(
-                                        color: selectedOutput.color.addLightness(-0.1),
-                                      ),
-                                    ),
-                                    Positioned(
-                                      top: 0,
-                                      bottom: 0,
-                                      left: 10,
-                                      child: Text(
-                                        "${selectedOutput.level == -144.0 ? "-∞" : selectedOutput.level.toStringAsFixed(1)} dB",
-                                        style: const TextStyle(
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                        textAlign: TextAlign.right,
-                                      ),
-                                    ),
-                                  ]);
-                                }),
-                              ),
-                            ]),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                if (selectedTab is MixerOutput) buildOutputBar(selectedTab as MixerOutput),
+                if (selectedTab is MixerFx) buildFxBar(selectedTab as MixerFx),
                 Expanded(
-                  child: Center(
-                    child: Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      children: selectedOutput.sources.values
-                          .map(
-                            (source) => SourceTile(
-                              source: source,
+                  child: CustomGridView(
+                    padding: EdgeInsets.all(20),
+                    crossAxisCount: 4,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                    children: selectedTab.sources
+                        .map((src) => SourceTile(
+                              source: src,
                               onLongPress: () {
-                                selectedSource = source;
-                                setState(() {});
+                                if (src is MixerInputSource) {
+                                  selectedSource = src;
+                                  setState(() {});
+                                }
                               },
-                            ) as Widget,
-                          )
-                          .toList(),
-                    ),
+                            ))
+                        .toList(),
                   ),
                 ),
               ],
@@ -517,9 +435,9 @@ class _MainBarState extends State<MainBar> {
                 color: Colors.black.withValues(alpha: 0.7),
                 child: Center(
                   child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  spacing: 10,
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    spacing: 10,
                     children: [
                       GestureDetector(
                         onTap: () {
@@ -548,30 +466,25 @@ class _MainBarState extends State<MainBar> {
                           ),
                         ),
                       ),
-                        ...[1, 2, 3].map(
-                        (fx) => GestureDetector(
+                        ...mixerFxs.map((fx) => GestureDetector(
                           onTap: () {
-                            if (selectedSource!.input.fx == fx) {
-                              selectedSource!.input.fx = 0;
-                            } else {
-                              selectedSource!.input.fx = fx;
-                            }
+                            fx.toggleEnabled(selectedSource!.input);
                             setState(() {});
                           },
                           child: Container(
-                            width: 200,
+                            width: 150,
                             height: 60,
                             decoration: BoxDecoration(
                               border: Border.all(
                                 color: Colors.white,
                                 width: 3,
                               ),
-                              color: selectedSource!.input.fx == fx ? Colors.green : Colors.black,
+                              color: fx.isEnabled(selectedSource!.input) ? Colors.green : Colors.black,
                             ),
                             child: Stack(
                             alignment: Alignment.center,
                               children: [
-                                if (selectedSource!.input.fx == fx)
+                                if (fx.isEnabled(selectedSource!.input))
                                   Positioned(
                                     top: 0,
                                     bottom: 0,
@@ -582,11 +495,11 @@ class _MainBarState extends State<MainBar> {
                                     ),
                                   ),
                                 Text(
-                                  "FX $fx",
+                                  "FX ${fx.name}",
                                   style: TextStyle(
                                     fontSize: 20,
                                     color: Colors.white,
-                                    fontWeight: selectedSource!.input.fx == fx ? FontWeight.bold : null,
+                                    fontWeight: fx.isEnabled(selectedSource!.input) ? FontWeight.bold : null,
                                   ),
                                   textAlign: TextAlign.center,
                                 ),
@@ -605,3 +518,52 @@ class _MainBarState extends State<MainBar> {
     });
   }
 }
+
+class CustomGridView extends StatelessWidget {
+  const CustomGridView({
+    super.key,
+    required this.crossAxisCount,
+    this.crossAxisSpacing = 0,
+    this.mainAxisSpacing = 0,
+    this.physics,
+    this.shrinkWrap = false,
+    this.padding,
+    required this.children,
+  });
+
+  final int crossAxisCount;
+  final double crossAxisSpacing;
+  final double mainAxisSpacing;
+  final ScrollPhysics? physics;
+  final bool shrinkWrap;
+  final List<Widget> children;
+  final EdgeInsets? padding;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.builder(
+      physics: physics,
+      shrinkWrap: shrinkWrap,
+      itemCount: (children.length / crossAxisCount).ceil(),
+      itemBuilder: (BuildContext context, int row) {
+        return Padding(
+          padding: EdgeInsets.only(
+            top: row == 0 ? padding?.top ?? 0 : mainAxisSpacing,
+            left: padding?.left ?? 0,
+            right: padding?.right ?? 0,
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: crossAxisSpacing,
+            children: children
+                .getRange(row * crossAxisCount, (row + 1) * crossAxisCount)
+                .map((child) => Expanded(child: child))
+                .toList(),
+          ),
+        );
+      },
+    );
+  }
+}
+
+

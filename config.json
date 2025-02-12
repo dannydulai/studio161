@@ -10,7 +10,7 @@
         },
         {
             "id": "hpp",
-            "name": "Headphones",
+            "name": "HP",
             "color": "#f0f0f0",
             "inputs": [ ],
             "icon": "piano.svg",
@@ -18,7 +18,7 @@
         },
         {
             "id": "hpd",
-            "name": "Headphones",
+            "name": "HP",
             "color": "#f0f0f0",
             "inputs": [ ],
             "icon": "drums.svg",
@@ -26,11 +26,45 @@
         },
         {
             "id": "hps",
-            "name": "Headphones",
+            "name": "HP",
             "color": "#f0f0f0",
             "inputs": [ ],
             "icon": "barcelona.svg",
             "bus": 3
+        }
+    ],
+    "fx": [
+        {
+            "id": "fx1",
+            "name": "1",
+            "color": "#80a0f0",
+            "inputs": [ ],
+            "icon": "fx.svg",
+            "bus": 5
+        },
+        {
+            "id": "fx2",
+            "name": "2",
+            "color": "#80a0f0",
+            "inputs": [ ],
+            "icon": "fx.svg",
+            "bus": 6
+        },
+        {
+            "id": "fx3",
+            "name": "3",
+            "color": "#80a0f0",
+            "inputs": [ ],
+            "icon": "fx.svg",
+            "bus": 7
+        },
+        {
+            "id": "fx4",
+            "name": "4",
+            "color": "#80a0f0",
+            "inputs": [ ],
+            "icon": "fx.svg",
+            "bus": 8
         }
     ],
     "inputs": [
@@ -115,7 +149,7 @@
             "color": "#ffbf00",
             "icon": "pc.svg",
             "iconScale": 0.90,
-            "channel": 15
+            "channel": 11
         },
         {
             "id": "pcmidi",
@@ -123,7 +157,7 @@
             "color": "#ffbf00",
             "icon": "midi.svg",
             "iconScale": 1.6,
-            "channel": 11
+            "channel": 12
         }
     ]
 }

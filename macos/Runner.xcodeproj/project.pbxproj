@@ -65,7 +65,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		303653432D46FA47004F0C03 /* liblibwing.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = liblibwing.dylib; path = /Users/danny/work/libwing/target/debug/liblibwing.dylib; sourceTree = "<absolute>"; };
+		303653432D46FA47004F0C03 /* liblibwing.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = liblibwing.dylib; path = /Users/danny/work/libwing/target/release/liblibwing.dylib; sourceTree = "<absolute>"; };
 		331C80D5294CF71000263BE5 /* RunnerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RunnerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		331C80D7294CF71000263BE5 /* RunnerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunnerTests.swift; sourceTree = "<group>"; };
 		333000ED22D3DE5D00554162 /* Warnings.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Warnings.xcconfig; sourceTree = "<group>"; };
@@ -570,7 +570,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Runner",
 					"$(PROJECT_DIR)",
-					"$(PROJECT_DIR)/../../libwing/target/debug",
+					"$(PROJECT_DIR)/../../libwing/target/release/",
 				);
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_VERSION = 5.0;
@@ -708,7 +708,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Runner",
 					"$(PROJECT_DIR)",
-					"$(PROJECT_DIR)/../../libwing/target/debug",
+					"$(PROJECT_DIR)/../../libwing/target/release/",
 				);
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
@@ -734,7 +734,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Runner",
 					"$(PROJECT_DIR)",
-					"$(PROJECT_DIR)/../../libwing/target/debug",
+					"$(PROJECT_DIR)/../../libwing/target/release/",
 				);
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_VERSION = 5.0;

@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'wing_bridge.dart';
 import 'wing_bindings.dart';
-import 'main.dart';
+import 'mixer_io.dart';
 
 class ReadIsolateData {
     final Pointer<NativeWingConsole> nativeConsole;
@@ -52,40 +52,16 @@ class MixerState extends ChangeNotifier {
 
       bool changed = false;
 
-      for (final output in mixerOutputs.values) {
-        if (r.dataId == output.wingPropLevel) {
-          // print("output ${output.id} lvl ${output.wingPropLevel} ${output.level} => ${r.dataFloatValue}");
-          output.level = r.dataFloatValue;
-          changed = true;
-        }
-        if (r.dataId == output.wingPropMute) {
-          // print("output ${output.id} mute ${output.wingPropMute} ${output.enabled} => ${r.dataIntValue == 0}");
-          output.enabled = r.dataIntValue == 0;
-          changed = true;
-        }
-
-        for (final source in output.sources.values) {
-          if (r.dataId == source.wingPropLevel) {
-            // print("source ${source.input.id} lvl ${source.wingPropLevel} ${source.level} => ${r.dataFloatValue}");
-            source.level = r.dataFloatValue;
-            changed = true;
-          }
-          if (r.dataId == source.wingPropSend) {
-            // print("source ${source.input.id} send ${source.wingPropSend} ${source.enabled} => ${r.dataIntValue != 0}");
-            source.enabled = r.dataIntValue != 0;
-            changed = true;
-          }
-        }
+      for (final output in mixerOutputs) {
+        if (output.onMixerData(r)) changed = true;
       }
 
-      if (changed) {
-        // print("notifyListeners");
-        notifyListeners();
-      }
+      if (changed) { signal(); }
     }
   }
 
   void signal() {
+    // print("notifyListeners");
     notifyListeners();
   }
 }
