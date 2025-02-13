@@ -37,7 +37,7 @@
         {
             "id": "fx1",
             "name": "1",
-            "color": "#80a0f0",
+            "color": "#6090f0",
             "inputs": [ ],
             "icon": "fx.svg",
             "bus": 5
@@ -45,7 +45,7 @@
         {
             "id": "fx2",
             "name": "2",
-            "color": "#80a0f0",
+            "color": "#80b0f0",
             "inputs": [ ],
             "icon": "fx.svg",
             "bus": 6
@@ -53,7 +53,7 @@
         {
             "id": "fx3",
             "name": "3",
-            "color": "#80a0f0",
+            "color": "#a0d0f0",
             "inputs": [ ],
             "icon": "fx.svg",
             "bus": 7
@@ -61,7 +61,7 @@
         {
             "id": "fx4",
             "name": "4",
-            "color": "#80a0f0",
+            "color": "#c0f0f0",
             "inputs": [ ],
             "icon": "fx.svg",
             "bus": 8

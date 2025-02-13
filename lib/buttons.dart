@@ -8,6 +8,7 @@ abstract class Box {
 }
 
 class VolBox extends Box {
+  double width;
   String? icon;
   double iconScale;
   String name;
@@ -18,6 +19,7 @@ class VolBox extends Box {
   Function(double)? onVolume;
 
   VolBox(
+    this.width,
     this.icon,
     this.iconScale,
     this.name,
@@ -43,7 +45,7 @@ class VolBox extends Box {
       },
       onTap: onTap,
       child: Container(
-        width: 75,
+        width: width,
         height: 42,
         decoration: BoxDecoration(
           color: !enabled ? Colors.black : color,
@@ -118,7 +120,7 @@ class OutBox extends Box {
       onTap: onTap,
       child: Container(
         alignment: Alignment.center,
-        width: 65,
+        width: 60,
         height: 30,
         decoration: BoxDecoration(
           color: !enabled ? Colors.black : color,
@@ -177,9 +179,10 @@ class InputRow extends StatelessWidget {
     final iconScale =  input.iconScale ?? 1.0;
     final rowname =    input.name;
     final rowcolor =   input.color;
-    final boxes = [
+    final outs = [
       for (final o in mixerOutputs)
         VolBox(
+          75,
           o.icon,
           o.iconScale ?? 1.0,
           o.name,
@@ -193,8 +196,10 @@ class InputRow extends StatelessWidget {
             enO[o.id]!.changeLevel(delta / 20);
           },
         ),
+    ];
+    final fxs = [
       for (final o in mixerFxs)
-        VolBox(null, o.iconScale ?? 1.0, "FX${o.name}", input.color, enFx[o.id]!.enabled,
+        VolBox(65, null, o.iconScale ?? 1.0, "FX${o.name}", enFx[o.id]!.output.color, enFx[o.id]!.enabled,
             "${enFx[o.id]!.level == -144.0 ? "-∞" : enFx[o.id]!.level.toStringAsFixed(1)} dB", () {
           enFx[o.id]!.toggleEnabled();
         }, (delta) {
@@ -232,7 +237,9 @@ class InputRow extends StatelessWidget {
           textAlign: TextAlign.left,
         ),
       ),
-      Row(spacing: 2, children: [for (final o in boxes) o.build()]),
+      Row(spacing: 2, children: [for (final o in outs) o.build()]),
+      SizedBox(width: 2),
+      Row(spacing: 2, children: [for (final o in fxs) o.build()]),
     ]);
   }
 }
@@ -272,7 +279,7 @@ class OutputRow extends StatelessWidget {
     return Row(spacing: 2, children: [
       if (rowicon != null)
         Padding(
-          padding: EdgeInsets.only(left: 8, right: 8, top: 8, bottom: 8),
+          padding: EdgeInsets.only(left: 8, right: 8, top: 2, bottom: 2),
           child: SizedBox(
             width: 30,
             height: 30,
@@ -301,10 +308,8 @@ class OutputRow extends StatelessWidget {
       ),
       Row(spacing: 2, children: [for (final o in boxes) o.build()]),
       SizedBox(width: 4),
-      mute.build(),
-      SizedBox(width: 4),
       SizedBox(
-        width: 280,
+        width: 300,
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onPanUpdate: (details) {
@@ -352,6 +357,8 @@ class OutputRow extends StatelessWidget {
           ),
         ),
       ),
+      SizedBox(width: 4),
+      mute.build(),
     ]);
   }
 }
