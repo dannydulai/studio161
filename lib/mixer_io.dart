@@ -1,13 +1,13 @@
 import "package:flutter/material.dart";
-import "let.dart";
 import "wing_bridge.dart";
-import "main.dart";
+import "mixer.dart";
+import "let.dart";
 
 List<MixerOutput> mixerOutputs = [];
 List<MixerInput> mixerInputs = [];
 List<MixerFx> mixerFxs = [];
 
-class MixerBase {
+abstract class MixerBase {
   final String id;
   final String name;
   final Color color;
@@ -24,6 +24,7 @@ class MixerBase {
   });
 
   List<MixerSource> get sources => [];
+  void requestData(Mixer mixer);
 }
 
 class MixerInput extends MixerBase {
@@ -48,6 +49,9 @@ class MixerInput extends MixerBase {
       channel: json["channel"] as int,
     );
   }
+
+  @override
+  void requestData(Mixer mixer) {}
 }
 
 class MixerOutput extends MixerBase {
@@ -106,13 +110,13 @@ class MixerOutput extends MixerBase {
   @override
   get sources => _sources;
 
-  void toggleMute() {
+  void toggleMute(Mixer mixer) {
     muted = !muted;
-    gConsole.setInt(wingPropMute, muted ? 1 : 0);
-    gMixerState.signal();
+    mixer.console!.setInt(wingPropMute, muted ? 1 : 0);
+    mixer.signal();
   }
 
-  void changeLevel({required double by}) {
+  void changeLevel({required double by, required Mixer mixer}) {
     if (level == -144 && by < 0) {
       return;
     } else if (level == -144 && by >= 0) {
@@ -124,8 +128,8 @@ class MixerOutput extends MixerBase {
       level += by;
       level = level.clamp(-90.0, 10.0);
     }
-    gConsole.setFloat(wingPropLevel, level);
-    gMixerState.signal();
+    mixer.console!.setFloat(wingPropLevel, level);
+    mixer.signal();
   }
 
   bool onMixerData(Response r) {
@@ -148,11 +152,14 @@ class MixerOutput extends MixerBase {
     return changed;
   }
 
-  void requestData() {
-    gConsole.requestNodeData(wingPropLevel);
-    gConsole.requestNodeData(wingPropMute);
+  @override
+  void requestData(Mixer mixer) {
+    // print("R: O$id, level: $wingPropLevel, mute: $wingPropMute");
+    mixer.console!.requestNodeData(wingPropLevel);
+    mixer.console!.requestNodeData(wingPropMute);
     for (final src in _sources) {
-        src.requestData();
+      // print("    Rin: O$id, source ${src.name}");
+      src.requestData(mixer);
     }
   }
 }
@@ -197,14 +204,31 @@ class MixerFx extends MixerBase {
     return _sources.any((src) => src is MixerInputSource && src.input == input && src.enabled);
   }
 
-  void toggleEnabled(MixerInput input) {
+  void toggleEnabled(Mixer mixer, MixerInput input) {
     for (final src in _sources) {
       if (src is MixerInputSource && src.input == input) {
-        src.toggleEnabled();
+        src.toggleEnabled(mixer);
         break;
       }
     }
-  } 
+  }
+
+  bool onMixerData(Response r) {
+    bool changed = false;
+    for (final source in sources) {
+      if (source.onMixerData(r)) changed = true;
+    }
+    return changed;
+  }
+
+  @override
+  void requestData(Mixer mixer) {
+    // print("R: F$id");
+    for (final src in _sources) {
+      // print("    Rin: F$id, source ${src.name}");
+      src.requestData(mixer);
+    }
+  }
 }
 
 abstract class MixerSource {
@@ -221,24 +245,25 @@ abstract class MixerSource {
 
   bool enabled = false;
 
-  void toggleEnabled() {
+  void toggleEnabled(Mixer mixer) {
     enabled = !enabled;
-    gConsole.setInt(wingPropSend, enabled ? 1 : 0);
-    gMixerState.signal();
+    mixer.console!.setInt(wingPropSend, enabled ? 1 : 0);
+    mixer.signal();
   }
 
   bool onMixerData(Response r) {
-      bool changed = false;
-      if (r.dataId == wingPropSend) {
-          // print("source ${input.id} send ${wingPropSend} ${enabled} => ${r.dataIntValue != 0}");
-          enabled = r.dataIntValue != 0;
-          changed = true;
-      }
-      return changed;
+    bool changed = false;
+    if (r.dataId == wingPropSend) {
+      // print("source ${input.id} send ${wingPropSend} ${enabled} => ${r.dataIntValue != 0}");
+      enabled = r.dataIntValue != 0;
+      changed = true;
+    }
+    return changed;
   }
 
-  void requestData() {
-    gConsole.requestNodeData(wingPropSend);
+  void requestData(Mixer mixer) {
+    // print("        R: mixersource $name, send: $wingPropSend");
+    mixer.console!.requestNodeData(wingPropSend);
   }
 }
 
@@ -252,10 +277,14 @@ class MixerFxSource extends MixerSource {
     required super.wingPropSend,
   });
 
-  @override Color get color => fx.color;
-  @override String get name => fx.name;
-  @override String? get icon => fx.icon;
-  @override double? get iconScale => fx.iconScale;
+  @override
+  Color get color => fx.color;
+  @override
+  String get name => fx.name;
+  @override
+  String? get icon => fx.icon;
+  @override
+  double? get iconScale => fx.iconScale;
 }
 
 class MixerInputSource extends MixerSource {
@@ -272,21 +301,25 @@ class MixerInputSource extends MixerSource {
     required super.wingPropSend,
   });
 
-  @override Color get color => input.color;
-  @override String get name => input.name;
-  @override String? get icon => input.icon;
-  @override double? get iconScale => input.iconScale;
+  @override
+  Color get color => input.color;
+  @override
+  String get name => input.name;
+  @override
+  String? get icon => input.icon;
+  @override
+  double? get iconScale => input.iconScale;
 
-  void setLevel(double val) {
+  void setLevel(Mixer mixer, double val) {
     if (val != -144) {
       val = val.clamp(-90.0, 10.0);
     }
     level = val;
-    gConsole.setFloat(wingPropLevel, level);
-    gMixerState.signal();
+    mixer.console!.setFloat(wingPropLevel, level);
+    mixer.signal();
   }
 
-  void changeLevel(double val) {
+  void changeLevel(Mixer mixer, double val) {
     if (level == -144 && val < 0) {
       return;
     } else if (level == -144 && val >= 0) {
@@ -298,7 +331,7 @@ class MixerInputSource extends MixerSource {
       level += val;
       level = level.clamp(-90.0, 10.0);
     }
-    setLevel(level);
+    setLevel(mixer, level);
   }
 
   @override
@@ -315,8 +348,9 @@ class MixerInputSource extends MixerSource {
   }
 
   @override
-  void requestData() {
-    super.requestData();
-    gConsole.requestNodeData(wingPropLevel);
+  void requestData(Mixer mixer) {
+    super.requestData(mixer);
+    // print("        R: mixerinputsource $name, send: $wingPropLevel");
+    mixer.console!.requestNodeData(wingPropLevel);
   }
 }

@@ -38,6 +38,7 @@ dependencies:
   path: ^1.8.3
   provider: ^6.1.1
   flutter_svg: ^2.0.17
+  flutter_window_close: ^1.2.0
 
 dev_dependencies:
   flutter_test:

@@ -1,2 +1,8 @@
 .aider*
 .DS_Store
+.flutter-plugins
+.flutter-plugins-dependencies
+.dart_tool
+devtools_options.yaml
+build/
+android/app/src/main/jniLibs/

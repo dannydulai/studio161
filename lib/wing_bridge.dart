@@ -129,9 +129,9 @@ class Response {
 
 class WingConsole {
   static final Finalizer<WingConsole> _finalizer =
-      Finalizer((console) => console._close());
+      Finalizer((console) => console.close());
 
-  void _close() {
+  void close() {
       ffiBindings.consoleDestroy(_console);
       _finalizer.detach(this);
   }
@@ -159,57 +159,21 @@ class WingConsole {
             malloc.free(nameNative);
         }
     }
-  static String idToName(int id) {
-      final str = ffiBindings.idToName(id);
-      if (str == nullptr) {
-          throw Exception('Failed to convert id $id to name');
-      }
-      try {
-          return str.toDartString();
-      } finally {
-          ffiBindings.stringDestroy(str);
-      }
-  }
 
-  static int idToParent(int id) {
-      return ffiBindings.idToParent(id);
-  }
-
-  static NodeType idToType(int id) {
-      return NodeType.values[ffiBindings.idToType(id)];
-  }
-
-  static (String, int) parseId(String id) {
-      final idNative = id.toNativeUtf8(allocator: malloc);
-      try {
-          Pointer<Pointer<Utf8>> outName = malloc<Pointer<Utf8>>(1);
-          Pointer<Int32> outId = malloc<Int32>(1);
-
-          outName.value = nullptr;
-          try {
-              int ret = ffiBindings.parseId(idNative, outName, outId);
-              if (ret != 0) {
-                  return (outName.value.toDartString(), outId.value);
-              } else {
-                  throw Exception('Failed to parse id $id');
-              }
-          } finally {
-              if (outName.value != nullptr) { ffiBindings.stringDestroy(outName.value); }
-              malloc.free(outName);
-              malloc.free(outId);
-          }
-      } finally {
-          malloc.free(idNative);
-      }
-  }
-
-  factory WingConsole.connect(String ip) {
-      final ipNative = ip.toNativeUtf8(allocator: malloc);
-      try {
-      var c = ffiBindings.consoleConnect(ipNative);
+  static WingConsole? connect(String? ip) {
+      if (ip == null) {
+          var c = ffiBindings.consoleConnect(nullptr);
+          if (c == nullptr) { return null; }
           return WingConsole._fromNative(c);
-      } finally {
-          malloc.free(ipNative);
+      } else {
+          final ipNative = ip.toNativeUtf8(allocator: malloc);
+          try {
+              var c = ffiBindings.consoleConnect(ipNative);
+              if (c == nullptr) { return null; }
+              return WingConsole._fromNative(c);
+          } finally {
+              malloc.free(ipNative);
+          }
       }
   }
 

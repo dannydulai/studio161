@@ -6,20 +6,20 @@ import "package:provider/provider.dart";
 import 'package:flutter_svg/flutter_svg.dart';
 
 import "wing_bridge.dart";
-import "mixer_state.dart";
 import "buttons.dart";
 import "let.dart";
+import "mixer.dart";
 import "mixer_io.dart";
 
-late WingConsole gConsole;
-late MixerState gMixerState;
-late Map<String, dynamic> config;
+import 'package:flutter_window_close/flutter_window_close.dart';
 
 typedef JList = List<dynamic>;
 typedef JMap = Map<String, dynamic>;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  Mixer mixer = Mixer();
 
   // FlutterView view = WidgetsBinding.instance.platformDispatcher.views.first;
   //
@@ -42,16 +42,7 @@ void main() async {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
   }
 
-  var consoles = WingDiscover.scan();
-  for (final element in consoles) {
-    // ignore: avoid_print
-    print("${element.name} @ ${element.ip} [${element.model}/${element.serial}/${element.firmware}]");
-  }
-
-  gConsole = WingConsole.connect(consoles[0].ip);
-  gMixerState = MixerState(gConsole);
-
-  config = jsonDecode(await rootBundle.loadString('config.json'));
+  final config = jsonDecode(await rootBundle.loadString('config.json'));
 
   (config["fx"] as JList).map((fx) => MixerFx.fromJson(fx)).forEach((fx) {
     mixerFxs.add(fx);
@@ -88,13 +79,15 @@ void main() async {
     }
   }
 
-  for (final output in mixerOutputs) {
-    output.requestData();
-  }
+  mixer.connect();
 
-  gMixerState.read();
+  FlutterWindowClose.setWindowShouldCloseHandler(() async {
+    mixer.terminate();
+    return true;
+  });
+
   runApp(ChangeNotifierProvider.value(
-    value: gMixerState,
+    value: mixer,
     child: const MyApp(),
   ));
 }
@@ -107,30 +100,17 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: "Studio161",
-      themeMode: ThemeMode.dark, 
+      themeMode: ThemeMode.dark,
       theme: ThemeData(
         useMaterial3: true,
       ),
-      home: const HomePage(),
-    );
-  }
-}
-
-class HomePage extends StatefulWidget {
-  const HomePage({super.key});
-  @override
-  State<HomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<HomePage> {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        color: Colors.black,
-        // width: 960,
-        // height: 600,
-        child: MainBar(),
+      home: Scaffold(
+        body: Container(
+          color: Colors.black,
+          // width: 960,
+          // height: 600,
+          child: MainBar(),
+        ),
       ),
     );
   }
@@ -154,12 +134,12 @@ class _MainBarState extends State<MainBar> {
     super.initState();
   }
 
-  buildOutputTab(MixerOutput output) {
+  buildOutputTab(Mixer mixer, MixerOutput output) {
     return Expanded(
       child: GestureDetector(
         onTap: () {
           if (output.id == selectedTab.id) {
-            selectedTab.toggleMute();
+            selectedTab.toggleMute(mixer);
           } else {
             selectedTab = output;
             setState(() {});
@@ -226,10 +206,54 @@ class _MainBarState extends State<MainBar> {
     );
   }
 
+  buildNotConnected(Mixer mixer) {
+    return GestureDetector(
+      onTap: () {
+        mixer.connect();
+      },
+      child: Container(
+        color: Colors.black,
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                mixer.connecting ? "Connecting..." : "Disconnected",
+                style: TextStyle(
+                  fontSize: 30,
+                  color: Colors.white,
+                ),
+              ),
+              SizedBox(height: 40),
+              if (mixer.connecting)
+                CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              if (!mixer.connecting)
+                FilledButton(
+                  onPressed: () {
+                    mixer.connect();
+                  },
+                  child: Text(
+                    "Connect",
+                    style: TextStyle(
+                      fontSize: 20,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Consumer<MixerState>(
-        builder: (context, mixerState, child) => Stack(
+    return Consumer<Mixer>(
+        builder: (context, mixer, child) {
+        return !mixer.connected ? buildNotConnected(mixer) : Stack(
               fit: StackFit.expand,
               children: [
                 Container(
@@ -240,15 +264,43 @@ class _MainBarState extends State<MainBar> {
                       child: Column(
                         children: [
                           Column(children: [
-                            for (final output in mixerOutputs) OutputRow(output: output),
+                            for (final output in mixerOutputs) OutputRow(output: output, mixer: mixer),
                           ]),
                           SizedBox(height: 20),
-                          Column(children: [for (final input in mixerInputs) InputRow(input: input)]),
-                        ],
+                          Column(children: [for (final input in mixerInputs) InputRow(input: input, mixer: mixer)]),
+                          SizedBox(height: 20),
+                          Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                              FilledButton(
+                                  onPressed: () {
+                                      mixer.terminate();
+                                  },
+                                  child: Text(
+                                      "Break connection",
+                                      style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.white,
+                                      ),
+                                  ),
+                              ),
+                              FilledButton(
+                                  onPressed: () {
+                                      mixer.disconnect();
+                                  },
+                                  child: Text(
+                                      "Disconnect",
+                                      style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.white,
+                                      ),
+                                  ),
+                              ),
+                              ]),
+                            ]),
+                        ),
                       ),
                     ),
-                  ),
-                ),
                 if (selectedSource != null)
                   GestureDetector(
                     behavior: HitTestBehavior.opaque,
@@ -266,7 +318,7 @@ class _MainBarState extends State<MainBar> {
                           children: [
                             GestureDetector(
                               onTap: () {
-                                selectedSource!.setLevel(0);
+                                selectedSource!.setLevel(mixer, 0);
                                 selectedSource = null;
                                 setState(() {});
                               },
@@ -294,7 +346,7 @@ class _MainBarState extends State<MainBar> {
                             ...mixerFxs.map(
                               (fx) => GestureDetector(
                                 onTap: () {
-                                  fx.toggleEnabled(selectedSource!.input);
+                                  fx.toggleEnabled(mixer, selectedSource!.input);
                                   setState(() {});
                                 },
                                 child: Container(
@@ -340,7 +392,8 @@ class _MainBarState extends State<MainBar> {
                     ),
                   )
               ],
-            )
+            );
+        }
     );
   }
 }

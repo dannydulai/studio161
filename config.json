@@ -10,7 +10,7 @@
         },
         {
             "id": "hpp",
-            "name": "HP",
+            "name": "Headphones",
             "color": "#f0f0f0",
             "inputs": [ ],
             "icon": "piano.svg",
@@ -18,7 +18,7 @@
         },
         {
             "id": "hpd",
-            "name": "HP",
+            "name": "Headphones",
             "color": "#f0f0f0",
             "inputs": [ ],
             "icon": "drums.svg",
@@ -26,7 +26,7 @@
         },
         {
             "id": "hps",
-            "name": "HP",
+            "name": "Headphones",
             "color": "#f0f0f0",
             "inputs": [ ],
             "icon": "barcelona.svg",

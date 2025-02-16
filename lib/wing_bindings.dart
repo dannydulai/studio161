@@ -96,10 +96,6 @@ class WingBindings {
     //XXX late final void Function(Pointer<NativeResponse>, int) nodeDefGetFloatEnumItem;
 
     late final int           Function(Pointer<Utf8>, Pointer<Int32>) nameToId;
-    late final Pointer<Utf8> Function(int) idToName;
-    late final int           Function(int) idToParent;
-    late final int           Function(int) idToType;
-    late final int           Function(Pointer<Utf8>, Pointer<Pointer<Utf8>>, Pointer<Int32>) parseId;
     late final void          Function(Pointer<Utf8>) stringDestroy;
 
 
@@ -281,22 +277,6 @@ class WingBindings {
         nameToId = _lib.lookupFunction<
             Int32 Function(Pointer<Utf8>, Pointer<Int32>),
             int   Function(Pointer<Utf8>, Pointer<Int32>)>('wing_name_to_id');
-
-        idToName = _lib.lookupFunction<
-            Pointer<Utf8> Function(Int32),
-            Pointer<Utf8> Function(int)>('wing_id_to_name');
-
-        idToParent = _lib.lookupFunction<
-            Int32 Function(Int32),
-            int   Function(int)>('wing_id_to_parent');
-
-        idToType = _lib.lookupFunction<
-            Int32 Function(Int32),
-            int   Function(int)>('wing_id_to_type');
-
-        parseId = _lib.lookupFunction<
-            Int32 Function(Pointer<Utf8>, Pointer<Pointer<Utf8>>, Pointer<Int32>),
-            int   Function(Pointer<Utf8>, Pointer<Pointer<Utf8>>, Pointer<Int32>)>('wing_parse_id');
 
         stringDestroy = _lib.lookupFunction<
             Void Function(Pointer<Utf8>),

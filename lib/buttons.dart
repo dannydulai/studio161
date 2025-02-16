@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'mixer_io.dart';
+import 'mixer.dart';
 import 'let.dart';
 
 abstract class Box {
@@ -141,8 +142,9 @@ class OutBox extends Box {
 }
 
 class InputRow extends StatelessWidget {
-  const InputRow({super.key, required this.input});
+  const InputRow({super.key, required this.input, required this.mixer});
 
+  final Mixer mixer;
   final MixerInput input;
 
   // Widget buildTileInside() {
@@ -182,7 +184,7 @@ class InputRow extends StatelessWidget {
     final outs = [
       for (final o in mixerOutputs)
         VolBox(
-          75,
+          100,
           o.icon,
           o.iconScale ?? 1.0,
           o.name,
@@ -190,20 +192,20 @@ class InputRow extends StatelessWidget {
           enO[o.id]!.enabled,
           "${enO[o.id]!.level == -144.0 ? "-∞" : enO[o.id]!.level.toStringAsFixed(1)} dB",
           () {
-            enO[o.id]!.toggleEnabled();
+            enO[o.id]!.toggleEnabled(mixer);
           },
           (delta) {
-            enO[o.id]!.changeLevel(delta / 20);
+            enO[o.id]!.changeLevel(mixer, delta / 40);
           },
         ),
     ];
     final fxs = [
       for (final o in mixerFxs)
-        VolBox(65, null, o.iconScale ?? 1.0, "FX${o.name}", enFx[o.id]!.output.color, enFx[o.id]!.enabled,
+        VolBox(70, null, o.iconScale ?? 1.0, "FX${o.name}", enFx[o.id]!.output.color, enFx[o.id]!.enabled,
             "${enFx[o.id]!.level == -144.0 ? "-∞" : enFx[o.id]!.level.toStringAsFixed(1)} dB", () {
-          enFx[o.id]!.toggleEnabled();
+          enFx[o.id]!.toggleEnabled(mixer);
         }, (delta) {
-          enFx[o.id]!.changeLevel(delta / 20);
+          enFx[o.id]!.changeLevel(mixer, delta / 40);
         })
     ];
 
@@ -245,8 +247,9 @@ class InputRow extends StatelessWidget {
 }
 
 class OutputRow extends StatelessWidget {
-  const OutputRow({super.key, required this.output});
+  const OutputRow({super.key, required this.output, required this.mixer});
 
+  final Mixer mixer;
   final MixerOutput output;
 
   @override
@@ -264,7 +267,7 @@ class OutputRow extends StatelessWidget {
           "FX${fsrc.name}",
           fsrc.color,
           fsrc.enabled,
-          () { fsrc.toggleEnabled(); },
+          () { fsrc.toggleEnabled(mixer); },
         ),
     ];
     final mute = OutBox(
@@ -272,7 +275,7 @@ class OutputRow extends StatelessWidget {
       HexColor.fromHex("#ff4040"),
       output.muted,
       () {
-        output.toggleMute();
+        output.toggleMute(mixer);
       },
     );
 
@@ -309,11 +312,11 @@ class OutputRow extends StatelessWidget {
       Row(spacing: 2, children: [for (final o in boxes) o.build()]),
       SizedBox(width: 4),
       SizedBox(
-        width: 300,
+        width: 400,
         child: GestureDetector(
           behavior: HitTestBehavior.opaque,
           onPanUpdate: (details) {
-            output.changeLevel(by: details.delta.dx / 40.0);
+            output.changeLevel(by: details.delta.dx / 40.0, mixer: mixer);
           },
           child: SizedBox(
             height: 30,
