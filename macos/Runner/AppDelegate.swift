@@ -14,5 +14,4 @@ class AppDelegate: FlutterAppDelegate {
   override func applicationShouldTerminate(_ application: NSApplication) -> NSApplication.TerminateReply {
     exit(0)
   }
-
 }

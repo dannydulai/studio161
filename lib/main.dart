@@ -11,15 +11,11 @@ import "let.dart";
 import "mixer.dart";
 import "mixer_io.dart";
 
-import 'package:flutter_window_close/flutter_window_close.dart';
-
 typedef JList = List<dynamic>;
 typedef JMap = Map<String, dynamic>;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  Mixer mixer = Mixer();
 
   // FlutterView view = WidgetsBinding.instance.platformDispatcher.views.first;
   //
@@ -79,12 +75,8 @@ void main() async {
     }
   }
 
+  Mixer mixer = Mixer();
   mixer.connect();
-
-  FlutterWindowClose.setWindowShouldCloseHandler(() async {
-    mixer.terminate();
-    return true;
-  });
 
   runApp(ChangeNotifierProvider.value(
     value: mixer,

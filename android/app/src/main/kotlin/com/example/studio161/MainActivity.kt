@@ -1,4 +1,4 @@
-package com.example.studio161
+package com.neebus.studio161
 
 import io.flutter.embedding.android.FlutterActivity
 

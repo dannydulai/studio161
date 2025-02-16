@@ -2,11 +2,12 @@
     <uses-permission android:name="android.permission.INTERNET"/>
 
     <application
-        android:label="studio161"
+        android:label="Studio 161"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"
+            android:screenOrientation="sensorLandscape"
             android:exported="true"
             android:launchMode="singleTop"
             android:taskAffinity=""
