@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:isolate';
 import 'dart:ffi';
 import 'package:flutter/foundation.dart';
@@ -19,15 +20,12 @@ class IsolateResponse {
 
 void _task(ReadIsolateData iso) async {
     while (true) {
-
-    await Future.delayed(Duration(milliseconds: 100));
-
-      // final r = ffiBindings.consoleRead(iso.nativeConsole);
-      // iso.sendPort.send(IsolateResponse(r));
-      // if (r == nullptr) {
-      //     print("null from nativeread()");
-      //   break;
-      // }
+      final r = ffiBindings.consoleRead(iso.nativeConsole);
+      iso.sendPort.send(IsolateResponse(r));
+      if (r == nullptr) {
+          print("null from nativeread()");
+        break;
+      }
     }
 }
 
@@ -64,8 +62,6 @@ class Mixer extends ChangeNotifier {
   }
 
   void terminate() {
-      connecting = false;
-      connected = false;
       console!.close();
       console = null;
   }
