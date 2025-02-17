@@ -1,5 +1,7 @@
 import Cocoa
 import FlutterMacOS
+import window_manager
+
 
 class MainFlutterWindow: NSWindow {
   override func awakeFromNib() {
@@ -8,10 +10,18 @@ class MainFlutterWindow: NSWindow {
     let frame = self.frame
     self.contentViewController = flutterViewController
     self.setFrame(frame, display: true)
-    self.minSize = NSSize(width: 1920/2, height: 1200/2)
 
     RegisterGeneratedPlugins(registry: flutterViewController)
 
     super.awakeFromNib()
   }
+
+  // this block plus the import at the top is form
+  // https://github.com/leanflutter/window_manager/tree/main/packages/window_manager
+  // -- see instructions for "Hidden at launch" 
+  override public func order(_ place: NSWindow.OrderingMode, relativeTo otherWin: Int) {
+      super.order(place, relativeTo: otherWin)
+      hiddenWindowAtLaunch()
+  }
+
 }

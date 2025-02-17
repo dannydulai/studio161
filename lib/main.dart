@@ -4,6 +4,8 @@ import "dart:io";
 import "package:flutter/material.dart";
 import "package:provider/provider.dart";
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:window_manager/window_manager.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import "wing_bridge.dart";
 import "buttons.dart";
@@ -11,51 +13,53 @@ import "let.dart";
 import "mixer.dart";
 import "mixer_io.dart";
 
-typedef JList = List<dynamic>;
-typedef JMap = Map<String, dynamic>;
+late SharedPreferences prefs;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await windowManager.ensureInitialized();
 
-  // FlutterView view = WidgetsBinding.instance.platformDispatcher.views.first;
-  //
-  // // Dimensions in physical pixels (px)
-  // Size size = view.physicalSize;
-  // double width = size.width;
-  // double height = size.height;
-  //
-  // print("Width: $width, Height: $height");
-  // // Dimensions in logical pixels (dp)
-  // Size lsize = view.physicalSize / view.devicePixelRatio;
-  // double lwidth = lsize.width;
-  // double lheight = lsize.height;
-  //
-  // print("LWidth: $lwidth, LHeight: $lheight");
-
-  //  print("current dir: ${Directory.current.path}");
+  prefs = await SharedPreferences.getInstance();
 
   if (Platform.isAndroid) {
+    // the app should be full screen on android, so
+    // disable the top status bar and bottom navigation bar
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
+  } else {
+    await windowManager.waitUntilReadyToShow();
+    await windowManager.setMinimumSize(Size(960, 600));
+    if (prefs.getDouble("windowX") != null && prefs.getDouble("windowY") != null) {
+        // print("setting position to ${prefs.getDouble("windowX")!},${prefs.getDouble("windowY")!}");
+        await windowManager.setPosition(Offset(prefs.getDouble("windowX")!, prefs.getDouble("windowY")!));
+    }
+    if (prefs.getDouble("windowW") != null && prefs.getDouble("windowH") != null) {
+      // print("setting size to ${prefs.getDouble("windowW")!}x${prefs.getDouble("windowH")!}");
+      await windowManager.setSize(Size(prefs.getDouble("windowW")!, prefs.getDouble("windowH")!));
+    }
+    await windowManager.show();
+    await windowManager.focus();
   }
+
+  Mixer mixer = Mixer();
 
   final config = jsonDecode(await rootBundle.loadString('config.json'));
 
   (config["fx"] as JList).map((fx) => MixerFx.fromJson(fx)).forEach((fx) {
-    mixerFxs.add(fx);
+    mixer.fxs.add(fx);
   });
   (config["inputs"] as JList).map((input) => MixerInput.fromJson(input)).forEach((input) {
-    mixerInputs.add(input);
+    mixer.inputs.add(input);
   });
   (config["outputs"] as JList).map((output) => MixerOutput.fromJson(output)).forEach((output) {
-    mixerOutputs.add(output);
-    for (final fx in mixerFxs) {
+    mixer.outputs.add(output);
+    for (final fx in mixer.fxs) {
       output.sources.add(MixerFxSource(
         fx: fx,
         output: output,
         wingPropSend: WingConsole.nameToId("/${fx.bus}/${output.outputSof}/on"),
       ));
     }
-    for (final input in mixerInputs) {
+    for (final input in mixer.inputs) {
       output.sources.add(MixerInputSource(
         output: output,
         input: input,
@@ -64,8 +68,8 @@ void main() async {
       ));
     }
   });
-  for (final fx in mixerFxs) {
-    for (final input in mixerInputs) {
+  for (final fx in mixer.fxs) {
+    for (final input in mixer.inputs) {
       fx.sources.add(MixerInputSource(
         output: fx,
         input: input,
@@ -75,17 +79,56 @@ void main() async {
     }
   }
 
-  Mixer mixer = Mixer();
   mixer.connect();
 
   runApp(ChangeNotifierProvider.value(
     value: mixer,
-    child: const MyApp(),
+    child: MyApp(mixer: mixer),
   ));
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class MyApp extends StatefulWidget {
+  const MyApp({super.key, required this.mixer});
+
+  final Mixer mixer;
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> with WindowListener {
+  @override
+  void initState() {
+    if (!Platform.isAndroid) {
+      windowManager.addListener(this);
+    }
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    if (!Platform.isAndroid) {
+      windowManager.removeListener(this);
+    }
+    super.dispose();
+  }
+
+  @override
+  void onWindowResized() async {
+    final bounds = await windowManager.getBounds();
+    // print("resized to ${bounds.width}x${bounds.height}@${bounds.left},${bounds.top}");
+    prefs.setDouble("windowW", bounds.width);
+    prefs.setDouble("windowH", bounds.height);
+  }
+
+  @override
+  void onWindowMoved() async {
+    final bounds = await windowManager.getBounds();
+    // print("moved to ${bounds.width}x${bounds.height}@${bounds.left},${bounds.top}");
+    prefs.setDouble("windowX", bounds.left);
+    prefs.setDouble("windowY", bounds.top);
+  }
+
 
   // This widget is the root of your application.
   @override
@@ -101,7 +144,7 @@ class MyApp extends StatelessWidget {
           color: Colors.black,
           // width: 960,
           // height: 600,
-          child: MainBar(),
+          child: MainBar(mixer: widget.mixer),
         ),
       ),
     );
@@ -109,7 +152,9 @@ class MyApp extends StatelessWidget {
 }
 
 class MainBar extends StatefulWidget {
-  const MainBar({super.key});
+  const MainBar({super.key, required this.mixer});
+
+  final Mixer mixer;
 
   @override
   State<MainBar> createState() => _MainBarState();
@@ -122,7 +167,7 @@ class _MainBarState extends State<MainBar> {
 
   @override
   void initState() {
-    selectedTab = mixerOutputs.first;
+    selectedTab = widget.mixer.outputs.first;
     super.initState();
   }
 
@@ -256,10 +301,10 @@ class _MainBarState extends State<MainBar> {
                       child: Column(
                         children: [
                           Column(children: [
-                            for (final output in mixerOutputs) OutputRow(output: output, mixer: mixer),
+                            for (final output in mixer.outputs) OutputRow(output: output, mixer: mixer),
                           ]),
                           SizedBox(height: 20),
-                          Column(children: [for (final input in mixerInputs) InputRow(input: input, mixer: mixer)]),
+                          Column(children: [for (final input in mixer.inputs) InputRow(input: input, mixer: mixer)]),
                           SizedBox(height: 20),
                           Row(
                               mainAxisAlignment: MainAxisAlignment.end,
@@ -335,7 +380,7 @@ class _MainBarState extends State<MainBar> {
                                 ),
                               ),
                             ),
-                            ...mixerFxs.map(
+                            ...mixer.fxs.map(
                               (fx) => GestureDetector(
                                 onTap: () {
                                   fx.toggleEnabled(mixer, selectedSource!.input);

@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:isolate';
 import 'dart:ffi';
 import 'package:flutter/foundation.dart';
@@ -23,7 +22,7 @@ void _task(ReadIsolateData iso) async {
       final r = ffiBindings.consoleRead(iso.nativeConsole);
       iso.sendPort.send(IsolateResponse(r));
       if (r == nullptr) {
-          print("null from nativeread()");
+          // print("null from nativeread()");
         break;
       }
     }
@@ -34,28 +33,32 @@ class Mixer extends ChangeNotifier {
     var connecting = false;
     WingConsole? console;
 
+
+    List<MixerOutput> outputs = [];
+    List<MixerInput> inputs = [];
+    List<MixerFx> fxs = [];
+
   void connect() async {
-    print("connecting");
+    // print("connecting");
     connecting = true;
     signal();
     console = WingConsole.connect(null);
-    print(console);
     connecting = false;
     if (console == null) {
-      print("failed to connect");
+      // print("failed to connect");
       connected = false;
       signal();
       return;
     }
 
-    print("connected");
+    // print("connected");
     connected = true;
     signal();
 
-    for (final output in mixerOutputs) {
+    for (final output in outputs) {
       output.requestData(this);
     }
-    for (final fx in mixerFxs) {
+    for (final fx in fxs) {
       fx.requestData(this);
     }
     read();
@@ -78,7 +81,7 @@ class Mixer extends ChangeNotifier {
     receivePort.listen((message) {
       if (message is IsolateResponse) {
         if (message.response == nullptr) {
-          print("lost connection");
+          // print("lost connection");
           if (connected) {
             connecting = false;
             connected = false;
@@ -98,9 +101,9 @@ class Mixer extends ChangeNotifier {
   void _onNodeData(Response r) {
     if (r.type == ResponseType.nodeData) {
 
-    if (mixerOutputs.map((output) => output.onMixerData(r)).any((r) => r) ||
-        mixerFxs.map((fx) => fx.onMixerData(r)).any((r) => r)) {
-          signal();
+      if (outputs.map((output) => output.onMixerData(r)).any((r) => r) ||
+          fxs.map((fx) => fx.onMixerData(r)).any((r) => r)) {
+        signal();
       }
     }
   }

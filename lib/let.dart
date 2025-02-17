@@ -1,27 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
 
-T? iff<T>(bool statement, T Function() branch) {
-    if (statement) {
-        return branch();
-    }
-    return null;
-}
-
-extension Utils<T> on T {
-    /// Calls the specified `block` with the current value as its argument.
-    R let<R>(R Function(T it) block) {
-        return block(this);
-    }
-
-    T? elseIf(bool statement, T Function() branch) {
-        return this ?? iff(statement, branch);
-    }
-
-    T orElse(T Function() branch) {
-        return this ?? branch();
-    }
-}
+typedef JList = List<dynamic>;
+typedef JMap = Map<String, dynamic>;
 
 extension ColorWithHSL on Color {
   HSLColor get hsl => HSLColor.fromColor(this);
@@ -74,3 +55,4 @@ extension HexColor on Color {
       // ignore: deprecated_member_use
       '${blue.toRadixString(16).padLeft(2, '0')}';
 }
+

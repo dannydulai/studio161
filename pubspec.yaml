@@ -39,6 +39,8 @@ dependencies:
   provider: ^6.1.1
   flutter_svg: ^2.0.17
   flutter_window_close: ^1.2.0
+  window_manager: ^0.4.3
+  shared_preferences: ^2.5.2
 
 dev_dependencies:
   flutter_test:

@@ -3,10 +3,6 @@ import "wing_bridge.dart";
 import "mixer.dart";
 import "let.dart";
 
-List<MixerOutput> mixerOutputs = [];
-List<MixerInput> mixerInputs = [];
-List<MixerFx> mixerFxs = [];
-
 abstract class MixerBase {
   final String id;
   final String name;

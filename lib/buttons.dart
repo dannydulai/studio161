@@ -150,7 +150,7 @@ class InputRow extends StatelessWidget {
   // Widget buildTileInside() {
   Map<String, MixerInputSource> whichFx(MixerInput input) {
     Map<String, MixerInputSource> ret = {};
-    for (final o in mixerFxs) {
+    for (final o in mixer.fxs) {
       for (final src in o.sources) {
         if (src is MixerInputSource && src.input == input) {
           ret[o.id] = src;
@@ -162,7 +162,7 @@ class InputRow extends StatelessWidget {
 
   Map<String, MixerInputSource> whichO(MixerInput input) {
     Map<String, MixerInputSource> ret = {};
-    for (final o in mixerOutputs) {
+    for (final o in mixer.outputs) {
       for (final src in o.sources) {
         if (src is MixerInputSource && src.input == input) {
           ret[o.id] = src;
@@ -182,7 +182,7 @@ class InputRow extends StatelessWidget {
     final rowname =    input.name;
     final rowcolor =   input.color;
     final outs = [
-      for (final o in mixerOutputs)
+      for (final o in mixer.outputs)
         VolBox(
           100,
           o.icon,
@@ -200,7 +200,7 @@ class InputRow extends StatelessWidget {
         ),
     ];
     final fxs = [
-      for (final o in mixerFxs)
+      for (final o in mixer.fxs)
         VolBox(70, null, o.iconScale ?? 1.0, "FX${o.name}", enFx[o.id]!.output.color, enFx[o.id]!.enabled,
             "${enFx[o.id]!.level == -144.0 ? "-∞" : enFx[o.id]!.level.toStringAsFixed(1)} dB", () {
           enFx[o.id]!.toggleEnabled(mixer);
