@@ -17,7 +17,6 @@ late SharedPreferences prefs;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await windowManager.ensureInitialized();
 
   prefs = await SharedPreferences.getInstance();
 
@@ -26,6 +25,7 @@ void main() async {
     // disable the top status bar and bottom navigation bar
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: []);
   } else {
+    await windowManager.ensureInitialized();
     await windowManager.waitUntilReadyToShow();
     await windowManager.setMinimumSize(Size(960, 600));
     if (prefs.getDouble("windowX") != null && prefs.getDouble("windowY") != null) {
