@@ -71,7 +71,7 @@ set_target_properties(${BINARY_NAME}
 
 
 # Link with libwing
-link_directories(${CMAKE_SOURCE_DIR}/../libwing)
+link_directories(${CMAKE_SOURCE_DIR}/../libwingdart)
 find_library(WING_LIB wing)
 
 # Generated plugin build rules, which manage building the plugins and adding

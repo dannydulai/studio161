@@ -58,7 +58,7 @@ flutter {
             }
         }
     tasks.register("cargoBuild$taskPostfix", Exec) {
-        workingDir "../../../libwing"
+        workingDir "../../../libwingdart"
             commandLine 'cargo', 'ndk',
         // the 2 ABIs below are used by real Android devices
         '-t', 'armeabi-v7a',

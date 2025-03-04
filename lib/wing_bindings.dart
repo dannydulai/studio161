@@ -38,10 +38,34 @@ enum NodeUnit {
     const NodeUnit(this.value);
 }
 
+enum MeterType {
+    channel(0xa0),
+    aux(0xa1),
+    bus(0xa2),
+    main(0xa3),
+    matrix(0xa4),
+    dca(0xa5),
+    fx(0xa6),
+    source(0xa7),
+    output(0xa8),
+    monitor(0xa9),
+    rta(0xaa),
+    channel2(0xab),
+    aux2(0xac),
+    bus2(0xad),
+    main2(0xae),
+    matrix2(0xaf);
+
+    final int value;
+    const MeterType(this.value);
+}
+
 // Opaque types
 final class NativeWingConsole extends Opaque {}
 final class NativeWingDiscover extends Opaque {}
+final class NativeWingMeter extends Opaque {}
 final class NativeResponse extends Opaque {}
+final class NativeMeterResponse extends Opaque {}
 
 // Native function signatures
 class WingBindings {
@@ -59,11 +83,16 @@ class WingBindings {
     late final Pointer<NativeWingConsole> Function(Pointer<Utf8> ip) consoleConnect;
     late final void          Function(Pointer<NativeWingConsole> console) consoleDestroy;
     late final Pointer<NativeResponse> Function(Pointer<NativeWingConsole> console) consoleRead;
+    late final void          Function(Pointer<NativeWingConsole> console, int nativeport) dartConsoleRead;
     late final int           Function(Pointer<NativeWingConsole> console, int id, Pointer<Utf8> value) consoleSetString;
     late final int           Function(Pointer<NativeWingConsole> console, int id, double value) consoleSetFloat;
     late final int           Function(Pointer<NativeWingConsole> console, int id, int value) consoleSetInt;
     late final int           Function(Pointer<NativeWingConsole> console, int id) consoleRequestNodeData;
     late final int           Function(Pointer<NativeWingConsole> console, int id) consoleRequestNodeDef;
+
+    late final int           Function(Pointer<NativeWingConsole> console, Pointer<Uint16>, int) consoleRequestMeter;
+    late final int           Function(Pointer<NativeWingConsole> console, Pointer<Uint16>, Pointer<Int16>) consoleReadMeter;
+    late final void          Function(Pointer<NativeWingConsole> console, int nativeport) dartConsoleReadMeter;
                              
     late final void          Function(Pointer<NativeResponse>) responseDestroy;
     late final int           Function(Pointer<NativeResponse>) responseGetType;
@@ -98,8 +127,15 @@ class WingBindings {
     late final int           Function(Pointer<Utf8>, Pointer<Int32>) nameToId;
     late final void          Function(Pointer<Utf8>) stringDestroy;
 
-
     WingBindings(this._lib) {
+        final storeDartPostCobject = _lib.lookupFunction<
+            Void Function(Pointer<NativeFunction<Int8 Function(Int64, Pointer<Dart_CObject>)>> ptr),
+            void Function(Pointer<NativeFunction<Int8 Function(Int64, Pointer<Dart_CObject>)>> ptr)>('store_dart_post_cobject');
+
+        storeDartPostCobject(NativeApi.postCObject);
+
+
+        
         discoverScan = _lib.lookupFunction<
             Pointer<NativeWingDiscover> Function(Int32),
             Pointer<NativeWingDiscover> Function(int)>('wing_discover_scan');
@@ -144,6 +180,14 @@ class WingBindings {
             Pointer<NativeResponse> Function(Pointer<NativeWingConsole>),
             Pointer<NativeResponse> Function(Pointer<NativeWingConsole>)>('wing_console_read');
 
+        dartConsoleRead = _lib.lookupFunction<
+            Void Function(Pointer<NativeWingConsole>, Int64),
+            void Function(Pointer<NativeWingConsole>, int)>('dart_wing_console_read');
+
+        dartConsoleReadMeter = _lib.lookupFunction<
+            Void Function(Pointer<NativeWingConsole>, Int64),
+            void Function(Pointer<NativeWingConsole>, int)>('dart_wing_console_read_meter');
+
         consoleSetString = _lib.lookupFunction<
             Int32 Function(Pointer<NativeWingConsole>, Int32, Pointer<Utf8>),
             int  Function(Pointer<NativeWingConsole>, int, Pointer<Utf8>)>('wing_console_set_string');
@@ -163,6 +207,14 @@ class WingBindings {
         consoleRequestNodeDef = _lib.lookupFunction<
             Int32 Function(Pointer<NativeWingConsole>, Int32),
             int  Function(Pointer<NativeWingConsole>, int)>('wing_console_request_node_definition');
+
+        consoleRequestMeter = _lib.lookupFunction<
+            Uint16 Function(Pointer<NativeWingConsole>, Pointer<Uint16>, Size),
+            int Function(Pointer<NativeWingConsole>, Pointer<Uint16>, int)>('wing_console_request_meter');
+
+        consoleReadMeter = _lib.lookupFunction<
+            Int32 Function(Pointer<NativeWingConsole>, Pointer<Uint16>, Pointer<Int16>),
+            int   Function(Pointer<NativeWingConsole>, Pointer<Uint16>, Pointer<Int16>)>('wing_console_read_meter');
 
         responseDestroy = _lib.lookupFunction<
             Void Function(Pointer<NativeResponse>),

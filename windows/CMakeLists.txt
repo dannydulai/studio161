@@ -53,8 +53,8 @@ add_subdirectory(${FLUTTER_MANAGED_DIR})
 add_subdirectory("runner")
 
 
-# Link with libwing
-link_directories(${CMAKE_SOURCE_DIR}/../libwing)
+# Link with libwingdart
+link_directories(${CMAKE_SOURCE_DIR}/../libwingdart)
 find_library(WING_LIB wing)
 
 # Generated plugin build rules, which manage building the plugins and adding

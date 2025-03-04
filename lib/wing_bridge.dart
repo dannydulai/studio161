@@ -1,8 +1,17 @@
+import 'dart:isolate';
+import 'dart:typed_data';
+import 'dart:async';
 import 'dart:ffi';
 import 'package:ffi/ffi.dart';
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 
 import 'wing_bindings.dart';
+
+class Meter {
+    MeterType type;
+    int index;
+    Meter(this.type, this.index);
+}
 
 class WingDiscover {
     const WingDiscover({
@@ -50,7 +59,7 @@ class WingDiscover {
     }
 }
 
-const _libname = 'libwing';
+const _libname = 'libwingdart';
 final DynamicLibrary _lib = switch (defaultTargetPlatform) {
     TargetPlatform.android => DynamicLibrary.open("lib$_libname.so"),
     TargetPlatform.linux => DynamicLibrary.open("lib$_libname.so"),
@@ -127,6 +136,9 @@ class Response {
     // Tuple<double, String> getFloatEnumItem(int index) => _bindings.nodeDefGetFloatEnumItem(_response, index);
 }
 
+class MeterResponse {
+}
+
 class WingConsole {
   static final Finalizer<WingConsole> _finalizer =
       Finalizer((console) => console.close());
@@ -177,14 +189,6 @@ class WingConsole {
       }
   }
 
-  Response? read() {
-      final r = ffiBindings.consoleRead(_console);
-      if (r == nullptr) {
-          return null;
-      }
-      return Response.fromNative(r);
-  }
-
   void setString(int id, String value) {
       final valueNative = value.toNativeUtf8(allocator: malloc);
       try {
@@ -210,4 +214,47 @@ class WingConsole {
       if (ffiBindings.consoleRequestNodeDef(_console, id) != 0) throw Exception('Failed to request node def');
   }
 
+  int requestMeters(List<Meter> meters) {
+      final nMeters = malloc<Uint16>(meters.length);
+      try {
+          for (int i = 0; i < meters.length; i++) {
+              nMeters[i] = meters[i].type.value << 8 | meters[i].index;
+          }
+          return ffiBindings.consoleRequestMeter(_console, nMeters, meters.length); 
+      } finally {
+          malloc.free(nMeters);
+      }
+  }
+
+  Stream<Response> read() {
+    final stream = StreamController<Response>();
+    final receivePort = ReceivePort();
+    receivePort.listen((message) {
+      if (message is int) {
+        if (message == 0) {
+          stream.close();
+        } else {
+          stream.add(Response.fromNative(Pointer<NativeResponse>.fromAddress(message)));
+        }
+      }
+    });
+    ffiBindings.dartConsoleRead(_console, receivePort.sendPort.nativePort);
+    return stream.stream;
+  }
+
+  Stream<(int, List<int>)> readMeter() {
+    final stream = StreamController<(int, List<int>)>();
+    final receivePort = ReceivePort();
+    receivePort.listen((message) {
+      if (message is int) {
+        stream.close();
+      } else {
+        int id = message[0];
+        Int16List data = message[1];
+        stream.add((id, data));
+      }
+    });
+    ffiBindings.dartConsoleReadMeter(_console, receivePort.sendPort.nativePort);
+    return stream.stream;
+  }
 }

@@ -83,9 +83,36 @@ void main() async {
 
   runApp(ChangeNotifierProvider.value(
     value: mixer,
-    child: MyApp(mixer: mixer),
+    child: ReassembleListener(onReassemble: () {
+        mixer.disconnect();
+        Future.delayed(Duration(milliseconds: 300), () { mixer.connect(); });
+    }, child: MyApp(mixer: mixer)),
   ));
 }
+
+class ReassembleListener extends StatefulWidget {
+  const ReassembleListener({super.key, required this.onReassemble, required this.child});
+
+  final VoidCallback onReassemble;
+  final Widget child;
+
+  @override
+  State<ReassembleListener> createState() => _ReassembleListenerState();
+}
+
+class _ReassembleListenerState extends State<ReassembleListener> {
+  @override
+  void reassemble() {
+      super.reassemble();
+      widget.onReassemble();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return widget.child;
+  }
+}
+
 
 class MyApp extends StatefulWidget {
   const MyApp({super.key, required this.mixer});

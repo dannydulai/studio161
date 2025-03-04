@@ -21,8 +21,8 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
-		303653442D46FA47004F0C03 /* liblibwing.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 303653432D46FA47004F0C03 /* liblibwing.dylib */; };
-		303653452D46FA52004F0C03 /* liblibwing.dylib in Bundle Framework */ = {isa = PBXBuildFile; fileRef = 303653432D46FA47004F0C03 /* liblibwing.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		303653442D46FA47004F0C03 /* liblibwingdart.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 303653432D46FA47004F0C03 /* liblibwingdart.dylib */; };
+		303653452D46FA52004F0C03 /* liblibwingdart.dylib in Bundle Framework */ = {isa = PBXBuildFile; fileRef = 303653432D46FA47004F0C03 /* liblibwingdart.dylib */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		335BBD1B22A9A15E00E9071D /* GeneratedPluginRegistrant.swift in Sources */ = {isa = PBXBuildFile; fileRef = 335BBD1A22A9A15E00E9071D /* GeneratedPluginRegistrant.swift */; };
 		33CC10F12044A3C60003C045 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 33CC10F02044A3C60003C045 /* AppDelegate.swift */; };
 		33CC10F32044A3C60003C045 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 33CC10F22044A3C60003C045 /* Assets.xcassets */; };
@@ -48,7 +48,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				303653452D46FA52004F0C03 /* liblibwing.dylib in Bundle Framework */,
+				303653452D46FA52004F0C03 /* liblibwingdart.dylib in Bundle Framework */,
 			);
 			name = "Bundle Framework";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -56,7 +56,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		303653432D46FA47004F0C03 /* liblibwing.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = liblibwing.dylib; path = /Users/danny/work/libwing/target/release/liblibwing.dylib; sourceTree = "<absolute>"; };
+		303653432D46FA47004F0C03 /* liblibwingdart.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = liblibwingdart.dylib; path = /Users/danny/work/libwingdart/target/release/liblibwingdart.dylib; sourceTree = "<absolute>"; };
 		333000ED22D3DE5D00554162 /* Warnings.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Warnings.xcconfig; sourceTree = "<group>"; };
 		335BBD1A22A9A15E00E9071D /* GeneratedPluginRegistrant.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GeneratedPluginRegistrant.swift; sourceTree = "<group>"; };
 		33CC10ED2044A3C60003C045 /* Studio 161.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Studio 161.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -85,7 +85,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				56F7E8069CA54998C5E752F3 /* Pods_Runner.framework in Frameworks */,
-				303653442D46FA47004F0C03 /* liblibwing.dylib in Frameworks */,
+				303653442D46FA47004F0C03 /* liblibwingdart.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -171,7 +171,7 @@
 			isa = PBXGroup;
 			children = (
 				BB0B7B89F0F499471605A653 /* Pods_Runner.framework */,
-				303653432D46FA47004F0C03 /* liblibwing.dylib */,
+				303653432D46FA47004F0C03 /* liblibwingdart.dylib */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -440,7 +440,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Runner",
 					"$(PROJECT_DIR)",
-					"$(PROJECT_DIR)/../../libwing/target/release/",
+					"$(PROJECT_DIR)/../../libwingdart/target/release/",
 				);
 				PRODUCT_NAME = "Studio 161";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -579,7 +579,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Runner",
 					"$(PROJECT_DIR)",
-					"$(PROJECT_DIR)/../../libwing/target/release/",
+					"$(PROJECT_DIR)/../../libwingdart/target/release/",
 				);
 				PRODUCT_NAME = "Studio 161";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -606,7 +606,7 @@
 					"$(inherited)",
 					"$(PROJECT_DIR)/Runner",
 					"$(PROJECT_DIR)",
-					"$(PROJECT_DIR)/../../libwing/target/release/",
+					"$(PROJECT_DIR)/../../libwingdart/target/release/",
 				);
 				PRODUCT_NAME = "Studio 161";
 				PROVISIONING_PROFILE_SPECIFIER = "";

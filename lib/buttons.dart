@@ -184,7 +184,7 @@ class InputRow extends StatelessWidget {
     final outs = [
       for (final o in mixer.outputs)
         VolBox(
-          100,
+          120,
           o.icon,
           o.iconScale ?? 1.0,
           o.name,
@@ -240,7 +240,7 @@ class InputRow extends StatelessWidget {
         ),
       ),
       Row(spacing: 2, children: [for (final o in outs) o.build()]),
-      SizedBox(width: 2),
+      SizedBox(width: 10),
       Row(spacing: 2, children: [for (final o in fxs) o.build()]),
     ]);
   }
