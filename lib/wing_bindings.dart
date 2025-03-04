@@ -132,8 +132,6 @@ class WingBindings {
             void Function(Pointer<NativeFunction<Int8 Function(Int64, Pointer<Dart_CObject>)>> ptr)>('store_dart_post_cobject');
 
         storeDartPostCobject(NativeApi.postCObject);
-
-
         
         discoverScan = _lib.lookupFunction<
             Pointer<NativeWingDiscover> Function(Int32),
