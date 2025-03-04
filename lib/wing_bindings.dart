@@ -72,60 +72,59 @@ class WingBindings {
     final DynamicLibrary _lib;
 
     late final Pointer<NativeWingDiscover> Function(int stopOnFirst) discoverScan;
-    late final void          Function(Pointer<NativeWingDiscover>) discoverDestroy;
-    late final int           Function(Pointer<NativeWingDiscover>) discoverCount;
-    late final Pointer<Utf8> Function(Pointer<NativeWingDiscover>, int) discoverGetIp;
-    late final Pointer<Utf8> Function(Pointer<NativeWingDiscover>, int) discoverGetName;
-    late final Pointer<Utf8> Function(Pointer<NativeWingDiscover>, int) discoverGetModel;
-    late final Pointer<Utf8> Function(Pointer<NativeWingDiscover>, int) discoverGetSerial;
-    late final Pointer<Utf8> Function(Pointer<NativeWingDiscover>, int) discoverGetFirmware;
+    late final void                        Function(Pointer<NativeWingDiscover>) discoverDestroy;
+    late final int                         Function(Pointer<NativeWingDiscover>) discoverCount;
+    late final Pointer<Utf8>               Function(Pointer<NativeWingDiscover>, int) discoverGetIp;
+    late final Pointer<Utf8>               Function(Pointer<NativeWingDiscover>, int) discoverGetName;
+    late final Pointer<Utf8>               Function(Pointer<NativeWingDiscover>, int) discoverGetModel;
+    late final Pointer<Utf8>               Function(Pointer<NativeWingDiscover>, int) discoverGetSerial;
+    late final Pointer<Utf8>               Function(Pointer<NativeWingDiscover>, int) discoverGetFirmware;
 
     late final Pointer<NativeWingConsole> Function(Pointer<Utf8> ip) consoleConnect;
-    late final void          Function(Pointer<NativeWingConsole> console) consoleDestroy;
-    late final Pointer<NativeResponse> Function(Pointer<NativeWingConsole> console) consoleRead;
-    late final void          Function(Pointer<NativeWingConsole> console, int nativeport) dartConsoleRead;
-    late final int           Function(Pointer<NativeWingConsole> console, int id, Pointer<Utf8> value) consoleSetString;
-    late final int           Function(Pointer<NativeWingConsole> console, int id, double value) consoleSetFloat;
-    late final int           Function(Pointer<NativeWingConsole> console, int id, int value) consoleSetInt;
-    late final int           Function(Pointer<NativeWingConsole> console, int id) consoleRequestNodeData;
-    late final int           Function(Pointer<NativeWingConsole> console, int id) consoleRequestNodeDef;
-
-    late final int           Function(Pointer<NativeWingConsole> console, Pointer<Uint16>, int) consoleRequestMeter;
-    late final int           Function(Pointer<NativeWingConsole> console, Pointer<Uint16>, Pointer<Int16>) consoleReadMeter;
-    late final void          Function(Pointer<NativeWingConsole> console, int nativeport) dartConsoleReadMeter;
-                             
-    late final void          Function(Pointer<NativeResponse>) responseDestroy;
-    late final int           Function(Pointer<NativeResponse>) responseGetType;
-
-    late final int           Function(Pointer<NativeResponse>) nodeDataGetId;
-    late final double        Function(Pointer<NativeResponse>) nodeDataGetFloat;
-    late final int           Function(Pointer<NativeResponse>) nodeDataGetInt;
-    late final Pointer<Utf8> Function(Pointer<NativeResponse>) nodeDataGetString;
-    late final int           Function(Pointer<NativeResponse>) nodeDataHasString;
-    late final int           Function(Pointer<NativeResponse>) nodeDataHasFloat;
-    late final int           Function(Pointer<NativeResponse>) nodeDataHasInt;
-                             
-    late final int           Function(Pointer<NativeResponse>) nodeDefGetParentId;
-    late final int           Function(Pointer<NativeResponse>) nodeDefGetId;
-    late final int           Function(Pointer<NativeResponse>) nodeDefGetIndex;
-    late final int           Function(Pointer<NativeResponse>) nodeDefGetType;
-    late final int           Function(Pointer<NativeResponse>) nodeDefGetUnit;
-    late final Pointer<Utf8> Function(Pointer<NativeResponse>) nodeDefGetName;
-    late final Pointer<Utf8> Function(Pointer<NativeResponse>) nodeDefGetLongName;
-    late final int           Function(Pointer<NativeResponse>) nodeDefIsReadOnly;
-    late final double        Function(Pointer<NativeResponse>) nodeDefGetMinFloat;
-    late final double        Function(Pointer<NativeResponse>) nodeDefGetMaxFloat;
-    late final int           Function(Pointer<NativeResponse>) nodeDefGetSteps;
-    late final int           Function(Pointer<NativeResponse>) nodeDefGetMinInt;
-    late final int           Function(Pointer<NativeResponse>) nodeDefGetMaxInt;
-    late final int           Function(Pointer<NativeResponse>) nodeDefGetMaxStringLen;
-    late final int           Function(Pointer<NativeResponse>) nodeDefGetStringEnumCount;
-    late final int           Function(Pointer<NativeResponse>) nodeDefGetFloatEnumCount;
+    late final void                       Function(Pointer<NativeWingConsole> console) consoleDestroy;
+    late final Pointer<NativeResponse>    Function(Pointer<NativeWingConsole> console) consoleRead;
+    late final void                       Function(Pointer<NativeWingConsole> console, int nativeport) dartConsoleRead;
+    late final int                        Function(Pointer<NativeWingConsole> console, int id, Pointer<Utf8> value) consoleSetString;
+    late final int                        Function(Pointer<NativeWingConsole> console, int id, double value) consoleSetFloat;
+    late final int                        Function(Pointer<NativeWingConsole> console, int id, int value) consoleSetInt;
+    late final int                        Function(Pointer<NativeWingConsole> console, int id) consoleRequestNodeData;
+    late final int                        Function(Pointer<NativeWingConsole> console, int id) consoleRequestNodeDef;
+                                          
+    late final int                        Function(Pointer<NativeWingConsole> console, Pointer<Uint16>, int) consoleRequestMeter;
+    late final int                        Function(Pointer<NativeWingConsole> console, Pointer<Uint16>, Pointer<Int16>) consoleReadMeter;
+    late final void                       Function(Pointer<NativeWingConsole> console, int nativeport) dartConsoleReadMeter;
+                                          
+    late final void                       Function(Pointer<NativeResponse>) responseDestroy;
+    late final int                        Function(Pointer<NativeResponse>) responseGetType;
+                                          
+    late final int                        Function(Pointer<NativeResponse>) nodeDataGetId;
+    late final double                     Function(Pointer<NativeResponse>) nodeDataGetFloat;
+    late final int                        Function(Pointer<NativeResponse>) nodeDataGetInt;
+    late final Pointer<Utf8>              Function(Pointer<NativeResponse>) nodeDataGetString;
+    late final int                        Function(Pointer<NativeResponse>) nodeDataHasString;
+    late final int                        Function(Pointer<NativeResponse>) nodeDataHasFloat;
+    late final int                        Function(Pointer<NativeResponse>) nodeDataHasInt;
+                                          
+    late final int                        Function(Pointer<NativeResponse>) nodeDefGetParentId;
+    late final int                        Function(Pointer<NativeResponse>) nodeDefGetId;
+    late final int                        Function(Pointer<NativeResponse>) nodeDefGetIndex;
+    late final int                        Function(Pointer<NativeResponse>) nodeDefGetType;
+    late final int                        Function(Pointer<NativeResponse>) nodeDefGetUnit;
+    late final Pointer<Utf8>              Function(Pointer<NativeResponse>) nodeDefGetName;
+    late final Pointer<Utf8>              Function(Pointer<NativeResponse>) nodeDefGetLongName;
+    late final int                        Function(Pointer<NativeResponse>) nodeDefIsReadOnly;
+    late final double                     Function(Pointer<NativeResponse>) nodeDefGetMinFloat;
+    late final double                     Function(Pointer<NativeResponse>) nodeDefGetMaxFloat;
+    late final int                        Function(Pointer<NativeResponse>) nodeDefGetSteps;
+    late final int                        Function(Pointer<NativeResponse>) nodeDefGetMinInt;
+    late final int                        Function(Pointer<NativeResponse>) nodeDefGetMaxInt;
+    late final int                        Function(Pointer<NativeResponse>) nodeDefGetMaxStringLen;
+    late final int                        Function(Pointer<NativeResponse>) nodeDefGetStringEnumCount;
+    late final int                        Function(Pointer<NativeResponse>) nodeDefGetFloatEnumCount;
     //XXX late final void Function(Pointer<NativeResponse>, int) nodeDefGetStringEnumItem;
     //XXX late final void Function(Pointer<NativeResponse>, int) nodeDefGetFloatEnumItem;
-
-    late final int           Function(Pointer<Utf8>, Pointer<Int32>) nameToId;
-    late final void          Function(Pointer<Utf8>) stringDestroy;
+    late final int                        Function(Pointer<Utf8>, Pointer<Int32>) nameToId;
+    late final void                       Function(Pointer<Utf8>) stringDestroy;
 
     WingBindings(this._lib) {
         final storeDartPostCobject = _lib.lookupFunction<

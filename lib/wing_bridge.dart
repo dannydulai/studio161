@@ -7,6 +7,18 @@ import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatf
 
 import 'wing_bindings.dart';
 
+const _libname = 'libwingdart';
+final DynamicLibrary _lib = switch (defaultTargetPlatform) {
+    TargetPlatform.android => DynamicLibrary.open("lib$_libname.so"),
+    TargetPlatform.linux => DynamicLibrary.open("lib$_libname.so"),
+    TargetPlatform.macOS => DynamicLibrary.open("lib$_libname.dylib"),
+    TargetPlatform.windows => DynamicLibrary.open("$_libname.dll"),
+    _ => DynamicLibrary.executable(),
+};
+
+final WingBindings ffiBindings = WingBindings(_lib);
+
+
 class Meter {
     MeterType type;
     int index;
@@ -59,81 +71,67 @@ class WingDiscover {
     }
 }
 
-const _libname = 'libwingdart';
-final DynamicLibrary _lib = switch (defaultTargetPlatform) {
-    TargetPlatform.android => DynamicLibrary.open("lib$_libname.so"),
-    TargetPlatform.linux => DynamicLibrary.open("lib$_libname.so"),
-    TargetPlatform.macOS => DynamicLibrary.open("lib$_libname.dylib"),
-    TargetPlatform.windows => DynamicLibrary.open("$_libname.dll"),
-    _ => DynamicLibrary.executable(),
-};
-
-final WingBindings ffiBindings = WingBindings(_lib);
-
 class Response {
-  static final Finalizer<Response> _finalizer =
-      Finalizer((response) => response._close());
+  static final Finalizer<Response> _finalizer = Finalizer((response) => response._close());
 
   void _close() {
-      ffiBindings.responseDestroy(_response);
-      _finalizer.detach(this);
+    ffiBindings.responseDestroy(_response);
+    _finalizer.detach(this);
   }
 
   Response.fromNative(this._response);
 
   final Pointer<NativeResponse> _response;
 
-    ResponseType get type => ResponseType.values[ffiBindings.responseGetType(_response)];
-    bool get dataHasString => ffiBindings.nodeDataHasString(_response) != 0;
-    bool get dataHasFloat => ffiBindings.nodeDataHasFloat(_response) != 0;
-    bool get dataHasInt => ffiBindings.nodeDataHasInt(_response) != 0;
+  ResponseType get type => ResponseType.values[ffiBindings.responseGetType(_response)];
+  bool get dataHasString => ffiBindings.nodeDataHasString(_response) != 0;
+  bool get dataHasFloat => ffiBindings.nodeDataHasFloat(_response) != 0;
+  bool get dataHasInt => ffiBindings.nodeDataHasInt(_response) != 0;
 
-    int    get dataId => ffiBindings.nodeDataGetId(_response);
-    double get dataFloatValue => ffiBindings.nodeDataGetFloat(_response);
-    int    get dataIntValue => ffiBindings.nodeDataGetInt(_response);
-    String get dataStringValue {
-        final str = ffiBindings.nodeDataGetString(_response);
-        try {
-            return str.toDartString();
-        } finally {
-            ffiBindings.stringDestroy(str);
-        }
+  int get dataId => ffiBindings.nodeDataGetId(_response);
+  double get dataFloatValue => ffiBindings.nodeDataGetFloat(_response);
+  int get dataIntValue => ffiBindings.nodeDataGetInt(_response);
+  String get dataStringValue {
+    final str = ffiBindings.nodeDataGetString(_response);
+    try {
+      return str.toDartString();
+    } finally {
+      ffiBindings.stringDestroy(str);
     }
+  }
 
-    NodeType get defType => NodeType.values[ffiBindings.nodeDefGetType(_response)];
-    NodeUnit get defUnit => NodeUnit.values[ffiBindings.nodeDefGetUnit(_response)];
-    bool get defIsReadOnly => ffiBindings.nodeDefIsReadOnly(_response) != 0;
-    int get defParentId => ffiBindings.nodeDefGetParentId(_response);
-    int get defId => ffiBindings.nodeDefGetId(_response);
-    int get defIndex => ffiBindings.nodeDefGetIndex(_response);
-    String get defName {
-        final str = ffiBindings.nodeDefGetName(_response);
-        try {
-            return str.toDartString();
-        } finally {
-            ffiBindings.stringDestroy(str);
-        }
+  NodeType get defType => NodeType.values[ffiBindings.nodeDefGetType(_response)];
+  NodeUnit get defUnit => NodeUnit.values[ffiBindings.nodeDefGetUnit(_response)];
+  bool get defIsReadOnly => ffiBindings.nodeDefIsReadOnly(_response) != 0;
+  int get defParentId => ffiBindings.nodeDefGetParentId(_response);
+  int get defId => ffiBindings.nodeDefGetId(_response);
+  int get defIndex => ffiBindings.nodeDefGetIndex(_response);
+  double get defMinFloat => ffiBindings.nodeDefGetMinFloat(_response);
+  double get defMaxFloat => ffiBindings.nodeDefGetMaxFloat(_response);
+  int get defSteps => ffiBindings.nodeDefGetSteps(_response);
+  int get defMinInt => ffiBindings.nodeDefGetMinInt(_response);
+  int get defMaxInt => ffiBindings.nodeDefGetMaxInt(_response);
+  int get defMaxStringLength => ffiBindings.nodeDefGetMaxStringLen(_response);
+  int get defStringEnumCount => ffiBindings.nodeDefGetStringEnumCount(_response);
+  int get defFloatEnumCount => ffiBindings.nodeDefGetFloatEnumCount(_response);
+  // Tuple<String, String> getStringEnumItem(int index) => _bindings.nodeDefGetStringEnumItem(_response, index);
+  // Tuple<double, String> getFloatEnumItem(int index) => _bindings.nodeDefGetFloatEnumItem(_response, index);
+  String get defName {
+    final str = ffiBindings.nodeDefGetName(_response);
+    try {
+      return str.toDartString();
+    } finally {
+      ffiBindings.stringDestroy(str);
     }
-    String get defLongName {
-        final str = ffiBindings.nodeDefGetLongName(_response);
-        try {
-            return str.toDartString();
-        } finally {
-            ffiBindings.stringDestroy(str);
-        }
+  }
+  String get defLongName {
+    final str = ffiBindings.nodeDefGetLongName(_response);
+    try {
+      return str.toDartString();
+    } finally {
+      ffiBindings.stringDestroy(str);
     }
-    double get defMinFloat => ffiBindings.nodeDefGetMinFloat(_response);
-    double get defMaxFloat => ffiBindings.nodeDefGetMaxFloat(_response);
-    int get defSteps => ffiBindings.nodeDefGetSteps(_response);
-    int get defMinInt => ffiBindings.nodeDefGetMinInt(_response);
-    int get defMaxInt => ffiBindings.nodeDefGetMaxInt(_response);
-    int get defMaxStringLength => ffiBindings.nodeDefGetMaxStringLen(_response);
-    int get defStringEnumCount => ffiBindings.nodeDefGetStringEnumCount(_response);
-    int get defFloatEnumCount => ffiBindings.nodeDefGetFloatEnumCount(_response);
-    
-    // XXX
-    // Tuple<String, String> getStringEnumItem(int index) => _bindings.nodeDefGetStringEnumItem(_response, index);
-    // Tuple<double, String> getFloatEnumItem(int index) => _bindings.nodeDefGetFloatEnumItem(_response, index);
+  }
 }
 
 class MeterResponse {
