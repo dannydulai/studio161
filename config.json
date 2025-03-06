@@ -22,6 +22,7 @@
             "color": "#f0f0f0",
             "inputs": [ ],
             "icon": "drums.svg",
+            "iconScale": 1.1,
             "bus": 1
         },
         {
@@ -69,6 +70,14 @@
     ],
     "inputs": [
         {
+            "id": "cablepurple",
+            "name": "Purple Cable",
+            "color": "#ff20ff",
+            "icon": "cable.svg",
+            "iconScale": 0.9,
+            "channel": 2
+        },
+        {
             "id": "cablered",
             "name": "Red Cable",
             "color": "#ff0000",
@@ -79,7 +88,7 @@
         {
             "id": "cableyellow",
             "name": "Yellow Cable",
-            "color": "#ffff00",
+            "color": "#dddd40",
             "icon": "cable.svg",
             "iconScale": 0.8,
             "channel": 5
@@ -93,14 +102,6 @@
             "channel": 3
         },
         {
-            "id": "cablepurple",
-            "name": "Purple Cable",
-            "color": "#ff40ff",
-            "icon": "cable.svg",
-            "iconScale": 0.9,
-            "channel": 2
-        },
-        {
             "id": "drums",
             "name": "Drums",
             "color": "#de3163",
@@ -109,36 +110,36 @@
         },
         {
             "id": "drumsdac",
-            "name": "iPad",
+            "name": "iPad (drums)",
             "color": "#de3163",
-            "icon": "drums.svg",
+            "icon": "tablet.svg",
             "channel": 9
         },
         {
             "id": "piano",
             "name": "Piano",
-            "color": "#0080fe",
+            "color": "#00CED1",
             "icon": "piano.svg",
             "channel": 7
         },
         {
             "id": "pianodac",
-            "name": "iPad",
-            "color": "#0080fe",
-            "icon": "piano.svg",
+            "name": "iPad (piano)",
+            "color": "#00CED1",
+            "icon": "tablet.svg",
             "channel": 10
         },
         {
             "id": "mic",
             "name": "Microphone",
-            "color": "#4cbb17",
+            "color": "#cc99ff",
             "icon": "microphone.svg",
             "iconScale": 0.7,
             "channel": 8
         },
         {
             "id": "mac",
-            "name": "Mac (Holo Audio)",
+            "name": "Mac",
             "color": "#ffbf00",
             "icon": "laptop.svg",
             "channel": 1
@@ -146,17 +147,17 @@
         {
             "id": "pc",
             "name": "PC (Main)",
-            "color": "#ffbf00",
+            "color": "#ff9f00",
             "icon": "pc.svg",
             "iconScale": 0.90,
             "channel": 11
         },
         {
             "id": "pcmidi",
-            "name": "PC (MIDI)",
-            "color": "#ffbf00",
-            "icon": "midi.svg",
-            "iconScale": 1.6,
+            "name": "PC (DAW)",
+            "color": "#ff7f00",
+            "icon": "ableton.svg",
+            "iconScale": 2.0,
             "channel": 12
         }
     ]

@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart'; // For `SystemChrome` and `rootBundle`
 import "dart:convert";
 import "dart:io";
+import "dart:ui" show FlutterView;
 import "package:flutter/material.dart";
 import "package:provider/provider.dart";
 import 'package:flutter_svg/flutter_svg.dart';
@@ -16,7 +17,12 @@ import "mixer_io.dart";
 late SharedPreferences prefs;
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+    WidgetsFlutterBinding.ensureInitialized();
+
+    FlutterView view = WidgetsBinding.instance.platformDispatcher.views.first;
+    // ignore: avoid_print
+    print("physicalSize: ${view.physicalSize}, devicePixelRatio: ${view.devicePixelRatio}");
+
 
   prefs = await SharedPreferences.getInstance();
 
@@ -27,7 +33,7 @@ void main() async {
   } else {
     await windowManager.ensureInitialized();
     await windowManager.waitUntilReadyToShow();
-    await windowManager.setMinimumSize(Size(960, 600));
+    await windowManager.setMinimumSize(Size(600, 960));
     if (prefs.getDouble("windowX") != null && prefs.getDouble("windowY") != null) {
         // print("setting position to ${prefs.getDouble("windowX")!},${prefs.getDouble("windowY")!}");
         await windowManager.setPosition(Offset(prefs.getDouble("windowX")!, prefs.getDouble("windowY")!));
@@ -225,18 +231,17 @@ class _MainBarState extends State<MainBar> {
           ),
           child: Row(
             children: [
-              if (output.icon != null)
-                Padding(
-                  padding: EdgeInsets.only(top: 4, bottom: 4, left: 8),
-                  child: SvgPicture.asset(
-                    "icons/${output.icon!}",
-                    height: 25 * (output.iconScale ?? 1.0),
-                    colorFilter: ColorFilter.mode(
-                      output.id == selectedTab.id ? Colors.black : output.color,
-                      BlendMode.srcIn,
-                    ),
+              Padding(
+                padding: EdgeInsets.only(top: 4, bottom: 4, left: 8),
+                child: SvgPicture.asset(
+                  "icons/${output.icon}",
+                  height: 25 * (output.iconScale ?? 1.0),
+                  colorFilter: ColorFilter.mode(
+                    output.id == selectedTab.id ? Colors.black : output.color,
+                    BlendMode.srcIn,
                   ),
                 ),
+              ),
               Expanded(
                 child: Padding(
                   padding: EdgeInsets.only(top: 4, bottom: 4, left: 8),
@@ -325,46 +330,76 @@ class _MainBarState extends State<MainBar> {
                   child: SingleChildScrollView(
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
-                      child: Column(
-                        children: [
-                          Column(children: [
-                            for (final output in mixer.outputs) OutputRow(output: output, mixer: mixer),
-                          ]),
-                          SizedBox(height: 20),
-                          Column(children: [for (final input in mixer.inputs) InputRow(input: input, mixer: mixer)]),
-                          SizedBox(height: 20),
-                          Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                              FilledButton(
-                                  onPressed: () {
-                                      mixer.terminate();
-                                  },
-                                  child: Text(
-                                      "Break connection",
-                                      style: TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.white,
-                                      ),
-                                  ),
+                      child: Column(children: [
+                        // Column(children: [
+                        //   for (final output in mixer.outputs) OutputRow(output: output, mixer: mixer),
+                        // ]),
+                        // SizedBox(height: 20),
+                        Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                          spacing: 20,
+                          children: [
+                            SizedBox(
+                              width: 200,
+                            ),
+                            Expanded(
+                              child: OutputTopRow(mixer: mixer),
+                            ),
+                            SizedBox(
+                              width: 200,
+                              child: Row(
+                                spacing: 5,
+                                children: ["FX 1", "FX 2", "FX 3", "FX 4"]
+                                    .map(
+                                      (x) => Expanded(
+                                          child: Text(x,
+                                              style: TextStyle(fontSize: 12, color: Colors.white),
+                                              textAlign: TextAlign.center)),
+                                    )
+                                    .toList(),
                               ),
-                              FilledButton(
-                                  onPressed: () {
-                                      mixer.disconnect();
-                                  },
-                                  child: Text(
-                                      "Disconnect",
-                                      style: TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.white,
-                                      ),
-                                  ),
-                              ),
-                              ]),
-                            ]),
+                            ),
+                          ],
                         ),
-                      ),
+                        SizedBox(height: 10),
+                        Column(
+                            spacing: 5,
+                            children: [for (final input in mixer.inputs) InputRow(input: input, mixer: mixer)]),
+                        SizedBox(height: 5),
+                        Column(
+                            spacing: 5,
+                            children: [for (final input in mixer.fxs) InputRow(input: input, mixer: mixer)]),
+                        SizedBox(height: 40),
+                        Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+                          FilledButton(
+                            onPressed: () {
+                              mixer.terminate();
+                            },
+                            child: Text(
+                              "Break connection",
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                          FilledButton(
+                            onPressed: () {
+                              mixer.disconnect();
+                            },
+                            child: Text(
+                              "Disconnect",
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ]),
+                      ]),
                     ),
+                  ),
+                ),
                 if (selectedSource != null)
                   GestureDetector(
                     behavior: HitTestBehavior.opaque,
@@ -458,6 +493,96 @@ class _MainBarState extends State<MainBar> {
               ],
             );
         }
+    );
+  }
+}
+
+class OutputTopRow extends StatefulWidget {
+  const OutputTopRow({
+    super.key,
+    required this.mixer,
+  });
+
+  final Mixer mixer;
+
+  @override
+  State<OutputTopRow> createState() => _OutputTopRowState();
+}
+
+class _OutputTopRowState extends State<OutputTopRow> {
+  double dragDelta = 0.0;
+  double origVol = 0.0;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      spacing: 5,
+      children: [
+        for (final o in widget.mixer.outputs)
+          Expanded(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+                o.toggleMute(widget.mixer);
+              },
+              onHorizontalDragStart: (details) {
+                dragDelta = 0.0;
+                origVol = o.level;
+              },
+              onHorizontalDragUpdate: (details) {
+                dragDelta += details.primaryDelta!;
+                o.setLevel(widget.mixer, origVol + dragDelta / 40.0);
+              },
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                spacing: 5,
+                children: [
+                  Text(
+                    o.name.toUpperCase(),
+                    style: TextStyle(fontSize: 12, color: Colors.white),
+                    textAlign: TextAlign.center,
+                  ),
+                  Row(
+                    spacing: 1,
+                    children: [
+                      for (int i = 0; i < 20; i++)
+                        Expanded(
+                          child: Container(
+                              height: 12,
+                              color: (o.level < 0)
+                                  ? ((19 - i) * -0.5) > o.level
+                                      ? Colors.red
+                                      : Colors.white24
+                                  : ((i) * 0.5) < o.level
+                                      ? Colors.green
+                                      : Colors.white24),
+                        )
+                    ],
+                  ),
+                  if (o.muted)
+                    Container(
+                      height: 16,
+                      decoration:
+                          BoxDecoration(color: HexColor.fromHex("#ff4040"), borderRadius: BorderRadius.circular(2)),
+                      child: Center(
+                        child: Text(
+                          "MUTED",
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    )
+                  else
+                    SizedBox(height: 16),
+                ],
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

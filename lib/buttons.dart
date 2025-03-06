@@ -4,96 +4,133 @@ import 'mixer_io.dart';
 import 'mixer.dart';
 import 'let.dart';
 
-abstract class Box {
-    Widget build();
-}
+class OutBox extends StatefulWidget {
+  final double width;
+  final double height;
+  final String? icon;
+  final double iconScale;
+  final String name;
+  final bool enabled;
+  final String? volume;
+  final double? rawVolume;
+  final Color color;
+  final Color color2;
+  final Function() onTap;
+  final Function(double)? onVolume;
 
-class VolBox extends Box {
-  double width;
-  String? icon;
-  double iconScale;
-  String name;
-  bool enabled;
-  String? volume;
-  Color color;
-  Function() onTap;
-  Function(double)? onVolume;
-
-  VolBox(
-    this.width,
+  const OutBox({
+    super.key,
+    required this.width,
+    required this.height,
     this.icon,
-    this.iconScale,
-    this.name,
-    this.color,
-    this.enabled,
+    this.iconScale = 1.0,
+    required this.name,
+    required this.color,
+    required this.color2,
+    required this.enabled,
     this.volume,
-    this.onTap,
+    this.rawVolume,
+    required this.onTap,
     this.onVolume,
-  );
-
-  double delta = 0.0;
+  });
 
   @override
-  build() {
+  State<OutBox> createState() => _OutBoxState();
+}
+
+class _OutBoxState extends State<OutBox> {
+  bool dragging = false;
+  double dragDelta = 0.0;
+  double origVol = 0.0;
+
+  @override
+  build(BuildContext context) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onHorizontalDragStart: (details) {
-        delta = 0.0;
-      },
-      onHorizontalDragUpdate: (details) {
-        delta += details.primaryDelta!;
-        onVolume?.call(details.primaryDelta!);
-      },
-      onTap: onTap,
+      onHorizontalDragStart: (widget.onVolume == null)
+          ? null
+          : (details) {
+              setState(() {
+                dragging = true;
+              });
+              dragDelta = 0.0;
+              origVol = widget.rawVolume ?? 0.0;
+            },
+      onHorizontalDragEnd: (widget.onVolume == null)
+          ? null
+          : (details) {
+              setState(() {
+                dragging = false;
+              });
+            },
+      onHorizontalDragUpdate: (widget.onVolume == null)
+          ? null
+          : (details) {
+              dragDelta += details.primaryDelta!;
+              widget.onVolume!(origVol + dragDelta / 40.0);
+            },
+      onTap: widget.onTap,
       child: Container(
-        width: width,
-        height: 42,
+        width: widget.width,
+        height: widget.height,
         decoration: BoxDecoration(
-          color: !enabled ? Colors.black : color,
-          border: Border.all(color: color, width: 1),
+          // color: !widget.enabled ? Colors.black : widget.color.addLightness(-0.7),
+          gradient: widget.enabled
+              ? LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    widget.color.addLightness(-0.1),
+                    widget.color.addLightness(-0.4),
+                    Colors.black,
+                  ],
+                  stops: [0.0, 0.5, 1.0],
+                )
+              : null,
+          border: Border.all(color: widget.color, width: 2),
         ),
         child: Stack(
           children: [
-            Positioned(
-              top: 2,
-              left: 4,
-              child: Row(
-                spacing: 4,
-                children: [
-                  if (icon != null)
-                    SvgPicture.asset(
-                      "icons/${icon!}",
-                      height: 16 * iconScale,
+            Center(
+              child: (widget.icon != null && !dragging)
+                  ? SvgPicture.asset(
+                      "icons/${widget.icon!}",
+                      height: 36 * widget.iconScale,
                       colorFilter: ColorFilter.mode(
-                        enabled ? Colors.black : color,
+                        widget.color2,
                         BlendMode.srcIn,
                       ),
+                    )
+                  : Text(
+                      widget.volume ?? "",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: widget.color2,
+                      ),
                     ),
-                  Text(
-                    name,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: enabled ? Colors.black : color,
-                    ),
-                  )
-                ],
-              ),
             ),
-            if (volume != null) ...[
-              SizedBox(height: 4),
+            if (widget.rawVolume != null && widget.enabled) ...[
               Positioned(
-                bottom: 2,
-                right: 4,
-                child: Text(
-                  volume!,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: enabled ? Colors.black : color,
-                  ),
-                ),
+                bottom: 0,
+                right: 0,
+                left: 0,
+                height: 5,
+                child: Row(spacing: 1, children: [
+                  for (int i = 0; i < 20; i++)
+                    Expanded(
+                      child: Container(
+                          color: (widget.rawVolume! < 0)
+                              ? ((19 - i) * -0.5) > widget.rawVolume!
+                                  ? Colors.red
+                                  : null
+                              : ((i) * 0.5) < widget.rawVolume!
+                                  ? Colors.green
+                                  : null),
+                    )
+                ]),
               ),
             ]
-
           ],
         ),
       ),
@@ -101,51 +138,223 @@ class VolBox extends Box {
   }
 }
 
-class OutBox extends Box {
-  String name;
-  bool enabled;
-  Color color;
-  Function() onTap;
+class FxBox extends StatefulWidget {
+  final double width;
+  final String? icon;
+  final double iconScale;
+  final String name;
+  final bool enabled;
+  final String? volume;
+  final double rawVolume;
+  final Color color;
+  final Color color2;
+  final Function() onTap;
+  final Function(double)? onVolume;
 
-  OutBox(
-    this.name,
-    this.color,
-    this.enabled,
-    this.onTap,
-  );
+  const FxBox({
+    super.key,
+    required this.width,
+    this.icon,
+    this.iconScale = 1.0,
+    required this.name,
+    required this.color,
+    required this.color2,
+    required this.enabled,
+    this.volume,
+    required this.rawVolume,
+    required this.onTap,
+    this.onVolume,
+  });
 
   @override
-  build() {
+  State<FxBox> createState() => _FxBoxState();
+}
+
+class _FxBoxState extends State<FxBox> {
+  bool dragging = false;
+  double dragDelta = 0.0;
+  double origVol = 0.0;
+
+  @override
+  build(BuildContext context) {
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: onTap,
-      child: Container(
-        alignment: Alignment.center,
-        width: 60,
-        height: 30,
-        decoration: BoxDecoration(
-          color: !enabled ? Colors.black : color,
-          border: Border.all(color: color, width: 1),
-        ),
-        child: Text(
-          name,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: enabled ? Colors.black : color,
-          ),
+      onHorizontalDragStart: (widget.onVolume == null)
+          ? null
+          : (details) {
+              setState(() {
+                dragging = true;
+              });
+              dragDelta = 0.0;
+              origVol = widget.rawVolume;
+            },
+      onHorizontalDragEnd: (widget.onVolume == null)
+          ? null
+          : (details) {
+              setState(() {
+                dragging = false;
+              });
+            },
+      onHorizontalDragUpdate: (widget.onVolume == null)
+          ? null
+          : (details) {
+              dragDelta += details.primaryDelta!;
+              widget.onVolume!(origVol + dragDelta / 40.0);
+            },
+      onTap: widget.onTap,
+      child: SizedBox(
+        width: widget.width,
+        height: widget.width,
+        child: Stack(
+          children: [
+            Center(
+              child: Container(
+                width: widget.width - 12,
+                height: widget.width - 12,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  //color: widget.color2,
+                  gradient: widget.enabled
+                      ? LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            widget.color.addLightness(-0.1),
+                            Colors.black,
+                          ],
+                          stops: [0.0, 1.0],
+                        )
+                      : null,
+                  border: Border.all(color: widget.color, width: 2),
+                ),
+              ),
+            ),
+            if (widget.enabled) ...[
+              Positioned(
+                top: 0,
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: CustomPaint(painter: CircleVolPainter(widget.rawVolume)),
+              ),
+              if (dragging) ...[
+                Center(
+                  child: Text(
+                    widget.volume ?? "",
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: widget.color2,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ],
         ),
       ),
     );
   }
 }
 
+class CircleVolPainter extends CustomPainter {
+  final double volume;
+
+  CircleVolPainter(this.volume);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = volume < 0 ? Colors.red : Colors.green
+      ..strokeWidth = 6
+      ..style = PaintingStyle.stroke;
+
+    const pi = 3.1415926;
+    const deg90 = 0.5 * pi;
+    const deg360 = 2.0 * pi;
+
+    for (int i = 0; i < 20; i++) {
+      if (i * -0.5 > volume) {
+        canvas.drawArc(
+          Rect.fromCenter(
+            center: Offset(size.width / 2, size.height / 2),
+            width: size.width - 4,
+            height: size.height - 4,
+          ),
+          deg90 + deg360 * 0.05 * i,
+          deg360 * 0.03,
+          false,
+          paint,
+        );
+      }
+      if (i * 0.5 < volume) {
+        canvas.drawArc(
+          Rect.fromCenter(
+            center: Offset(size.width / 2, size.height / 2),
+            width: size.width - 4,
+            height: size.height - 4,
+          ),
+          deg90 + deg360 * -0.05 * i,
+          deg360 * 0.03,
+          false,
+          paint,
+        );
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(CircleVolPainter oldDelegate) {
+    return oldDelegate.volume != volume;
+  }
+}
+
+// class JustBox extends StatelessWidget {
+//   final String name;
+//   final bool enabled;
+//   final Color color;
+//   final Function() onTap;
+//
+//   const JustBox({
+//     super.key,
+//     required this.name,
+//     required this.color,
+//     required this.enabled,
+//     required this.onTap,
+//   });
+//
+//   @override
+//   build(BuildContext context) {
+//     return GestureDetector(
+//       behavior: HitTestBehavior.opaque,
+//       onTap: onTap,
+//       child: Container(
+//         alignment: Alignment.center,
+//         width: 60,
+//         height: 30,
+//         decoration: BoxDecoration(
+//           color: !enabled ? Colors.black : color,
+//           border: Border.all(color: color, width: 1),
+//         ),
+//         child: Text(
+//           name,
+//           textAlign: TextAlign.center,
+//           style: TextStyle(
+//             fontSize: 14,
+//             fontWeight: FontWeight.bold,
+//             color: enabled ? Colors.black : color,
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+// }
+
 class InputRow extends StatelessWidget {
   const InputRow({super.key, required this.input, required this.mixer});
 
   final Mixer mixer;
-  final MixerInput input;
+  final MixerBase input;
 
   // Widget buildTileInside() {
   Map<String, MixerInputSource> whichFx(MixerInput input) {
@@ -160,11 +369,13 @@ class InputRow extends StatelessWidget {
     return ret;
   }
 
-  Map<String, MixerInputSource> whichO(MixerInput input) {
-    Map<String, MixerInputSource> ret = {};
+  Map<String, MixerSource> whichO(MixerBase input) {
+    Map<String, MixerSource> ret = {};
     for (final o in mixer.outputs) {
       for (final src in o.sources) {
         if (src is MixerInputSource && src.input == input) {
+          ret[o.id] = src;
+        } else if (src is MixerFxSource && src.fx == input) {
           ret[o.id] = src;
         }
       }
@@ -174,194 +385,236 @@ class InputRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final enFx = whichFx(input);
-    final enO = whichO(input);
-
     final rowicon =    input.icon;
     final iconScale =  input.iconScale ?? 1.0;
     final rowname =    input.name;
     final rowcolor =   input.color;
-    final outs = [
+
+    final enO = whichO(input);
+    final List<Widget> outs = [
       for (final o in mixer.outputs)
-        VolBox(
-          120,
-          o.icon,
-          o.iconScale ?? 1.0,
-          o.name,
-          input.color,
-          enO[o.id]!.enabled,
-          "${enO[o.id]!.level == -144.0 ? "-∞" : enO[o.id]!.level.toStringAsFixed(1)} dB",
-          () {
-            enO[o.id]!.toggleEnabled(mixer);
-          },
-          (delta) {
-            enO[o.id]!.changeLevel(mixer, delta / 40);
-          },
-        ),
-    ];
-    final fxs = [
-      for (final o in mixer.fxs)
-        VolBox(70, null, o.iconScale ?? 1.0, "FX${o.name}", enFx[o.id]!.output.color, enFx[o.id]!.enabled,
-            "${enFx[o.id]!.level == -144.0 ? "-∞" : enFx[o.id]!.level.toStringAsFixed(1)} dB", () {
-          enFx[o.id]!.toggleEnabled(mixer);
-        }, (delta) {
-          enFx[o.id]!.changeLevel(mixer, delta / 40);
-        })
-    ];
-
-    return Row(spacing: 2, children: [
-      if (rowicon != null)
-        Padding(
-          padding: EdgeInsets.only(left: 8, right: 8, top: 8, bottom: 8),
-          child: SizedBox(
-            width: 30,
-            height: 30,
-            child: Center(
-              child: SvgPicture.asset(
-                "icons/$rowicon",
-                height: 30 * iconScale,
-                colorFilter: ColorFilter.mode(
-                  rowcolor,
-                  BlendMode.srcIn,
-                ),
-              ),
-            ),
-          ),
-        ),
-      Expanded(
-        child: Text(
-          rowname,
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.bold,
+        Expanded(
+          child: OutBox(
+            width: 120,
+            height: 70,
+            icon: o.icon,
+            iconScale: o.iconScale ?? 1.0,
+            name: o.name,
             color: rowcolor,
+            color2: o.color,
+            enabled: enO[o.id]!.enabled,
+            volume: (enO[o.id] is MixerInputSource)
+                ? (enO[o.id] as MixerInputSource).level == -144.0 ? "-∞" : (enO[o.id] as MixerInputSource).level.toStringAsFixed(1)
+                : null,
+            rawVolume: (enO[o.id] is MixerInputSource)
+                ? (enO[o.id] as MixerInputSource).level
+                : null,
+            onTap: () {
+              enO[o.id]!.toggleEnabled(mixer);
+            },
+            onVolume: !enO[o.id]!.enabled || input is! MixerInput ? null : (vol) {
+              if (enO[o.id] is MixerInputSource) {
+                (enO[o.id] as MixerInputSource).setLevel(mixer, vol);
+              }
+            },
           ),
-          textAlign: TextAlign.left,
-        ),
-      ),
-      Row(spacing: 2, children: [for (final o in outs) o.build()]),
-      SizedBox(width: 10),
-      Row(spacing: 2, children: [for (final o in fxs) o.build()]),
-    ]);
-  }
-}
-
-class OutputRow extends StatelessWidget {
-  const OutputRow({super.key, required this.output, required this.mixer});
-
-  final Mixer mixer;
-  final MixerOutput output;
-
-  @override
-  Widget build(BuildContext context) {
-    double pct = (((output.level == -144.0 ? -90.0 : output.level) + 90.0) / 100.0).clamp(0.0, 1.0);
-
-    final rowicon =    output.icon;
-    final iconScale =  output.iconScale ?? 1.0;
-    final rowname =    output.name;
-    final rowcolor =   output.color;
-
-    final boxes = [
-      for (final fsrc in output.sources.whereType<MixerFxSource>())
-        OutBox(
-          "FX${fsrc.name}",
-          fsrc.color,
-          fsrc.enabled,
-          () { fsrc.toggleEnabled(mixer); },
         ),
     ];
-    final mute = OutBox(
-      output.muted ? "Muted" : "Mute",
-      HexColor.fromHex("#ff4040"),
-      output.muted,
-      () {
-        output.toggleMute(mixer);
-      },
-    );
 
-    return Row(spacing: 2, children: [
-      if (rowicon != null)
-        Padding(
-          padding: EdgeInsets.only(left: 8, right: 8, top: 2, bottom: 2),
-          child: SizedBox(
-            width: 30,
-            height: 30,
-            child: Center(
-              child: SvgPicture.asset(
-                "icons/$rowicon",
-                height: 30 * iconScale,
-                colorFilter: ColorFilter.mode(
-                  rowcolor,
-                  BlendMode.srcIn,
-                ),
-              ),
-            ),
-          ),
-        ),
-      Expanded(
-        child: Text(
-          rowname,
-          style: TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.bold,
+    late List<Widget> fxs;
+    if (input is MixerInput) {
+      final enFx = whichFx(input as MixerInput);
+      fxs = [
+        for (final o in mixer.fxs)
+          FxBox(
+            width: 50,
+            name: "FX${o.name}",
             color: rowcolor,
-          ),
-          textAlign: TextAlign.left,
-        ),
-      ),
-      Row(spacing: 2, children: [for (final o in boxes) o.build()]),
-      SizedBox(width: 4),
+            color2: enFx[o.id]!.output.color,
+            enabled: enFx[o.id]!.enabled,
+            volume: enFx[o.id]!.level == -144.0 ? "-∞" : enFx[o.id]!.level.toStringAsFixed(1),
+            rawVolume: enFx[o.id]!.level,
+            onTap: () {
+              enFx[o.id]!.toggleEnabled(mixer);
+            },
+            onVolume: enFx[o.id]!.enabled ? (vol) {
+              enFx[o.id]!.setLevel(mixer, vol);
+            } : null,
+          )
+        ];
+    } else {
+        fxs = [ ];
+    }
+
+    return Row(
+    spacing: 20,
+    children: [
       SizedBox(
-        width: 400,
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onPanUpdate: (details) {
-            output.changeLevel(by: details.delta.dx / 40.0, mixer: mixer);
-          },
-          child: SizedBox(
-            height: 30,
-            child: LayoutBuilder(builder: (BuildContext context, BoxConstraints constraints) {
-              return Stack(alignment: Alignment.centerLeft, children: [
-                Positioned(
-                  top: 0,
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: output.color,
-                        width: 1,
-                      ),
+        width: 200,
+        child: Row(
+          children: [
+            Padding(
+              padding: EdgeInsets.only(left: 8, right: 16, top: 8, bottom: 8),
+              child: SizedBox(
+                width: 30,
+                height: 30,
+                child: Center(
+                  child: SvgPicture.asset(
+                    "icons/$rowicon",
+                    height: 30 * iconScale,
+                    colorFilter: ColorFilter.mode(
+                      rowcolor,
+                      BlendMode.srcIn,
                     ),
                   ),
                 ),
-                Positioned(
-                  top: 1,
-                  bottom: 1,
-                  left: 1,
-                  right: 1 + ((constraints.maxWidth - 4) * (1.0 - pct)),
-                  child: Container(
-                    color: output.color.addLightness(-0.2),
-                  ),
+              ),
+            ),
+            Expanded(
+              child: Text(
+                rowname,
+                style: TextStyle(
+                  fontSize: input is MixerInput ? 15 : 24,
+                  fontWeight: FontWeight.bold,
+                  color: rowcolor,
                 ),
-                Padding(
-                  padding: EdgeInsets.only(left: 12),
-                  child: Text(
-                    "${output.level == -144.0 ? "-∞" : output.level.toStringAsFixed(1)} dB",
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ]);
-            }),
-          ),
+                textAlign: TextAlign.left,
+              ),
+            ),
+          ],
         ),
       ),
-      SizedBox(width: 4),
-      mute.build(),
+      Expanded(child:
+        Row(spacing: 5,
+        children: outs),
+      ),
+      SizedBox(
+        width: 200,
+        child: Row(
+        spacing: 0,
+          children: fxs,
+        ),
+      ),
     ]);
   }
 }
+
+// class OutputRow extends StatelessWidget {
+//   const OutputRow({super.key, required this.output, required this.mixer});
+//
+//   final Mixer mixer;
+//   final MixerOutput output;
+//
+//   @override
+//   Widget build(BuildContext context) {
+//     double pct = (((output.level == -144.0 ? -90.0 : output.level) + 90.0) / 100.0).clamp(0.0, 1.0);
+//
+//     final rowicon =    output.icon;
+//     final iconScale =  output.iconScale ?? 1.0;
+//     final rowname =    output.name;
+//     final rowcolor =   output.color;
+//
+//     final boxes = [
+//       for (final fsrc in output.sources.whereType<MixerFxSource>())
+//         OutBox(
+//           name: "FX${fsrc.name}",
+//           color: fsrc.color,
+//           enabled: fsrc.enabled,
+//           onTap: () { fsrc.toggleEnabled(mixer); },
+//         ),
+//     ];
+//     final mute = OutBox(
+//       name: output.muted ? "Muted" : "Mute",
+//       color: HexColor.fromHex("#ff4040"),
+//       enabled: output.muted,
+//       onTap: () {
+//         output.toggleMute(mixer);
+//       },
+//     );
+//
+//     return Row(spacing: 2, children: [
+//       if (rowicon != null)
+//         Padding(
+//           padding: EdgeInsets.only(left: 8, right: 8, top: 2, bottom: 2),
+//           child: SizedBox(
+//             width: 30,
+//             height: 30,
+//             child: Center(
+//               child: SvgPicture.asset(
+//                 "icons/$rowicon",
+//                 height: 30 * iconScale,
+//                 colorFilter: ColorFilter.mode(
+//                   rowcolor,
+//                   BlendMode.srcIn,
+//                 ),
+//               ),
+//             ),
+//           ),
+//         ),
+//       Expanded(
+//         child: Text(
+//           rowname,
+//           style: TextStyle(
+//             fontSize: 15,
+//             fontWeight: FontWeight.bold,
+//             color: rowcolor,
+//           ),
+//           textAlign: TextAlign.left,
+//         ),
+//       ),
+//       Row(spacing: 2, children: boxes),
+//       SizedBox(width: 4),
+//       SizedBox(
+//         width: 400,
+//         child: GestureDetector(
+//           behavior: HitTestBehavior.opaque,
+//           onPanUpdate: (details) {
+//             output.changeLevel(by: details.delta.dx / 40.0, mixer: mixer);
+//           },
+//           child: SizedBox(
+//             height: 30,
+//             child: LayoutBuilder(builder: (BuildContext context, BoxConstraints constraints) {
+//               return Stack(alignment: Alignment.centerLeft, children: [
+//                 Positioned(
+//                   top: 0,
+//                   bottom: 0,
+//                   left: 0,
+//                   right: 0,
+//                   child: Container(
+//                     decoration: BoxDecoration(
+//                       border: Border.all(
+//                         color: output.color,
+//                         width: 1,
+//                       ),
+//                     ),
+//                   ),
+//                 ),
+//                 Positioned(
+//                   top: 1,
+//                   bottom: 1,
+//                   left: 1,
+//                   right: 1 + ((constraints.maxWidth - 4) * (1.0 - pct)),
+//                   child: Container(
+//                     color: output.color.addLightness(-0.2),
+//                   ),
+//                 ),
+//                 Padding(
+//                   padding: EdgeInsets.only(left: 12),
+//                   child: Text(
+//                     "${output.level == -144.0 ? "-∞" : output.level.toStringAsFixed(1)} dB",
+//                     style: const TextStyle(
+//                       fontSize: 14,
+//                       fontWeight: FontWeight.bold,
+//                     ),
+//                   ),
+//                 ),
+//               ]);
+//             }),
+//           ),
+//         ),
+//       ),
+//       SizedBox(width: 4),
+//       mute,
+//     ]);
+//   }
+// }

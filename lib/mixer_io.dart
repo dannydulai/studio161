@@ -8,14 +8,14 @@ abstract class MixerBase {
   final String name;
   final Color color;
 
-  String? icon;
+  String icon;
   double? iconScale;
 
   MixerBase({
     required this.id,
     required this.name,
     required this.color,
-    this.icon,
+    required this.icon,
     this.iconScale,
   });
 
@@ -30,7 +30,7 @@ class MixerInput extends MixerBase {
     required super.id,
     required super.name,
     required super.color,
-    super.icon,
+    required super.icon,
     super.iconScale,
     required this.channel,
   });
@@ -64,7 +64,7 @@ class MixerOutput extends MixerBase {
     required super.id,
     required super.name,
     required super.color,
-    super.icon,
+    required super.icon,
     super.iconScale,
     required this.outputSof,
     required this.wingPropLevel,
@@ -76,6 +76,7 @@ class MixerOutput extends MixerBase {
     if (!json.containsKey("id")) throw Exception("Invalid output definition -- must contain 'id'");
     if (!json.containsKey("name")) throw Exception("Invalid output definition -- must contain 'name'");
     if (!json.containsKey("color")) throw Exception("Invalid output definition -- must contain 'color'");
+    if (!json.containsKey("icon")) throw Exception("Invalid output definition -- must contain 'icon'");
 
     int wingPropMute;
     int wingPropLevel;
@@ -112,6 +113,14 @@ class MixerOutput extends MixerBase {
     mixer.signal();
   }
 
+  void setLevel(Mixer mixer, double val) {
+      if (val != -144) {
+          val = val.clamp(-90.0, 10.0);
+      }
+      level = (val / 0.5).round() * 0.5;
+      mixer.console!.setFloat(wingPropLevel, level);
+      mixer.signal();
+  }
   void changeLevel({required double by, required Mixer mixer}) {
     if (level == -144 && by < 0) {
       return;
@@ -124,8 +133,7 @@ class MixerOutput extends MixerBase {
       level += by;
       level = level.clamp(-90.0, 10.0);
     }
-    mixer.console!.setFloat(wingPropLevel, level);
-    mixer.signal();
+    setLevel(mixer, level);
   }
 
   bool onMixerData(Response r) {
@@ -170,7 +178,7 @@ class MixerFx extends MixerBase {
     required super.id,
     required super.name,
     required super.color,
-    super.icon,
+    required super.icon,
     super.iconScale,
     required this.outputSof,
     required this.bus,
@@ -310,21 +318,21 @@ class MixerInputSource extends MixerSource {
     if (val != -144) {
       val = val.clamp(-90.0, 10.0);
     }
-    level = val;
+    level = (val / 0.5).round() * 0.5;
     mixer.console!.setFloat(wingPropLevel, level);
     mixer.signal();
   }
 
-  void changeLevel(Mixer mixer, double val) {
-    if (level == -144 && val < 0) {
+  void changeLevel(Mixer mixer, double by) {
+    if (level == -144 && by < 0) {
       return;
-    } else if (level == -144 && val >= 0) {
-      level = -90 + val;
+    } else if (level == -144 && by >= 0) {
+      level = -90 + by;
       level = level.clamp(-90.0, 10.0);
-    } else if (level == -90 && val < 0) {
+    } else if (level == -90 && by < 0) {
       level = -144;
     } else {
-      level += val;
+      level += by;
       level = level.clamp(-90.0, 10.0);
     }
     setLevel(mixer, level);

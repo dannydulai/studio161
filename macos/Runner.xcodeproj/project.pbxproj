@@ -56,7 +56,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		303653432D46FA47004F0C03 /* liblibwingdart.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = liblibwingdart.dylib; path = /Users/danny/work/libwingdart/target/release/liblibwingdart.dylib; sourceTree = "<absolute>"; };
+		303653432D46FA47004F0C03 /* liblibwingdart.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = liblibwingdart.dylib; path = /Users/danny/work/wing/libwingdart/target/release/liblibwingdart.dylib; sourceTree = "<absolute>"; };
 		333000ED22D3DE5D00554162 /* Warnings.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Warnings.xcconfig; sourceTree = "<group>"; };
 		335BBD1A22A9A15E00E9071D /* GeneratedPluginRegistrant.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GeneratedPluginRegistrant.swift; sourceTree = "<group>"; };
 		33CC10ED2044A3C60003C045 /* Studio 161.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Studio 161.app"; sourceTree = BUILT_PRODUCTS_DIR; };

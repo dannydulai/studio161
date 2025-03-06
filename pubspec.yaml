@@ -79,6 +79,8 @@ flutter:
       - icons/piano.svg
       - icons/speaker.svg
       - icons/fx.svg
+      - icons/ableton.svg
+      - icons/tablet.svg
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
