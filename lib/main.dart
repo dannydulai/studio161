@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart'; // For `SystemChrome` and `rootBundle`
 import "dart:convert";
 import "dart:io";
+import "dart:math";
 import "dart:ui" show FlutterView;
 import "package:flutter/material.dart";
 import "package:provider/provider.dart";
@@ -513,8 +514,110 @@ class _OutputTopRowState extends State<OutputTopRow> {
   double dragDelta = 0.0;
   double origVol = 0.0;
 
+  // we go 21 becaause its a <= and the last value is the max dB, so you can't
+  // really get to the last one when scanning, and that means there are 20
+  // "slots" to drop a volume bar into
+  late List<double> dbVals = List.generate(21, (index) => 0.0, growable: false);
+
+  // This is complicated, so let's define the math clearly:
+  //
+  // Step 1. Normalizing dB scale (0–1):
+  //
+  //      val = (db−dbmin) / (dbmax-dbmin)
+  //
+  // So:
+  //    
+  //      -60 dB →  0/70 = 0.0
+  //        0 dB → 60/70 of the way through the dB, so 6/7
+  //      +10 dB → 70/70 = 1.0
+  //
+  //
+  // Step 2. We want to map this normalized value (x) into a nonlinear slider position (sliderPos) between 0 and maxSlider.
+  //
+  // We use an exponential curve:
+  //
+  //      sliderPos = 19 * x^γ
+  //
+  // We know at 0 dB (x=6/7) the sliderPos should be 14 (desired0dBPosition):
+  // 
+  //      14 = 19 ⋅ (6/7)^γ
+  //
+  // Solve for γ:
+  //
+  //      (6/7)^γ = 14/maxSlider
+  //
+  // Taking logs to solve for gamma:
+  //
+  //      γ = log(14/maxSlider) / log(6/7)
+  //
+  // Now gamma is a constant that we can use to convert between the two scales.
+  //
+  //      x = pow(sliderPos / maxSlider, 1 / gamma)
+  //      db = x * (dbmax - dbmin) + dbmin
+  //
+  // but we have a problem, which is that 0.0 dB does not land on an integer index, so we need to scale the whole thing by a factor to make it work.
+  //
+  //      desired0dBPosition = 14
+  //      current0dBPosition = sliderMax * pow((-dbmin) / (dbmax - dbmin), gamma)
+  //      scaleFactor = desired0dBPosition / current0dBPosition
+  //
+  // and then same as before, but we apply the scalefactor to the slider position:
+  //
+  //      scaledPos = sliderPos / scaleFactor
+  //      x = pow(scaledPos / sliderMax, 1 / gamma)
+  //      db = x * (dbmax - dbmin) + dbmin
+  //
+  double splToDb(int spl) {
+    final maxSlider = dbVals.length - 1.0;
+    final slider = spl.clamp(0.0, maxSlider);
+    final min = -60.0;
+    final max = 10.0;
+    final desired0dBPosition = 14;
+
+    if (slider == 0) return -144.0; // 0 slider is -infinity dB
+
+    final gamma = log(desired0dBPosition / maxSlider) / log(- min / (max - min));
+
+    final current0dBPosition = maxSlider * pow(-min / (max - min), gamma);
+    final scaleFactor = desired0dBPosition / current0dBPosition;
+
+    final scaledPos = slider / scaleFactor; // reverse scaling here
+    final x = pow(scaledPos / maxSlider, 1.0 / gamma);
+    final val = x * (max - min) + min;
+
+    return (val * 10.0).round() / 10.0; // round to 1 decimal place
+  }
+
+  int dbToSpl(double db) {
+    db = (db * 10.0).round() / 10.0; // round to 1 decimal place
+    for (int i = 0; i < dbVals.length; i++) {
+     // print("$db <= ${dbVals[i]} / $i");
+      if (db <= dbVals[i]) return i;
+    }
+    return dbVals.length-1;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    dbVals = List.generate(21, (index) => splToDb(index));
+    // print(dbVals);
+  }
+
+
   @override
   Widget build(BuildContext context) {
+    // List<double> testValues = [-80.0, -60.0, -40.0, -20.0, -10.0, 0.0, 5.0, 10.0];
+    // for (double db in testValues) {
+    //   final index = dbToSpl(db);
+    //   print("dB value: ${db.toStringAsFixed(1)} maps to index: $index");
+    // }
+    //
+    // for (int index = 0; index < dbVals.length; index++) {
+    //   final db = splToDb(index);
+    //   print("Index: $index maps to dB value: ${db.toStringAsFixed(1)}");
+    // }
+
     return Row(
       spacing: 5,
       children: [
@@ -531,7 +634,14 @@ class _OutputTopRowState extends State<OutputTopRow> {
               },
               onHorizontalDragUpdate: (details) {
                 dragDelta += details.primaryDelta!;
-                o.setLevel(widget.mixer, origVol + dragDelta / 40.0);
+
+                final v = dbToSpl(origVol) + (dragDelta / 40.0);
+                // print("dbToSpl(origVol): ${dbToSpl(origVol)}");
+                // print("dragDelta / 60.0: ${dragDelta / 40.0}");
+                // print("v: $v");
+                // print("v.round(): ${v.round()}");
+                // print("splToDb(v): ${splToDb(v.round())}");
+                o.setLevel(widget.mixer, splToDb(v.round()));
               },
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -545,18 +655,15 @@ class _OutputTopRowState extends State<OutputTopRow> {
                   Row(
                     spacing: 1,
                     children: [
-                      for (int i = 0; i < 20; i++)
-                        Expanded(
-                          child: Container(
-                              height: 12,
-                              color: (o.level < 0)
-                                  ? ((19 - i) * -0.5) > o.level
-                                      ? Colors.red
-                                      : Colors.white24
-                                  : ((i) * 0.5) < o.level
-                                      ? Colors.green
-                                      : Colors.white24),
-                        )
+                      for (int i = 0; i < dbToSpl(o.level); i++)
+                        if (i < 13)
+                          Expanded(child: Container(height: 12, color: Colors.green))
+                        else if (i == 13)
+                          Expanded(child: Container(height: 12, color: Colors.white))
+                        else
+                          Expanded(child: Container(height: 12, color: Colors.red)),
+                      for (int i = dbToSpl(o.level); i < 20; i++)
+                        Expanded(child: Container(height: 12, color: Colors.white12))
                     ],
                   ),
                   if (o.muted)
@@ -566,7 +673,7 @@ class _OutputTopRowState extends State<OutputTopRow> {
                           BoxDecoration(color: HexColor.fromHex("#ff4040"), borderRadius: BorderRadius.circular(2)),
                       child: Center(
                         child: Text(
-                          "MUTED",
+                          "MUTED" /* " ${o.level.toStringAsFixed(1)}dB [${dbToSpl(o.level)}]" */,
                           style: TextStyle(
                             fontSize: 10,
                             color: Colors.black,

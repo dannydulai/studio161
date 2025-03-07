@@ -117,7 +117,8 @@ class MixerOutput extends MixerBase {
       if (val != -144) {
           val = val.clamp(-90.0, 10.0);
       }
-      level = (val / 0.5).round() * 0.5;
+      level = val;
+      // level = (level / 0.5).round() * 0.5;
       mixer.console!.setFloat(wingPropLevel, level);
       mixer.signal();
   }
