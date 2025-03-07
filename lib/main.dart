@@ -663,7 +663,10 @@ class _OutputTopRowState extends State<OutputTopRow> {
                         else
                           Expanded(child: Container(height: 12, color: Colors.red)),
                       for (int i = dbToSpl(o.level); i < 20; i++)
-                        Expanded(child: Container(height: 12, color: Colors.white12))
+                        if (i == 13)
+                        Expanded(child: Container(height: 12, color: Colors.white30))
+                        else
+                        Expanded(child: Container(height: 12, color: Colors.white12)),
                     ],
                   ),
                   if (o.muted)
@@ -673,7 +676,7 @@ class _OutputTopRowState extends State<OutputTopRow> {
                           BoxDecoration(color: HexColor.fromHex("#ff4040"), borderRadius: BorderRadius.circular(2)),
                       child: Center(
                         child: Text(
-                          "MUTED" /* " ${o.level.toStringAsFixed(1)}dB [${dbToSpl(o.level)}]" */,
+                          "MUTED" /* " ${o.leveljtoStringAsFixed(1)}dB [${dbToSpl(o.level)}]" */,
                           style: TextStyle(
                             fontSize: 10,
                             color: Colors.black,

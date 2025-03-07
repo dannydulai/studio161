@@ -9,6 +9,7 @@ class OutBox extends StatefulWidget {
   final double height;
   final String? icon;
   final double iconScale;
+  final bool muted;
   final String name;
   final bool enabled;
   final String? volume;
@@ -28,6 +29,7 @@ class OutBox extends StatefulWidget {
     required this.color,
     required this.color2,
     required this.enabled,
+    this.muted = false,
     this.volume,
     this.rawVolume,
     required this.onTap,
@@ -70,68 +72,71 @@ class _OutBoxState extends State<OutBox> {
               widget.onVolume!(origVol + dragDelta / 40.0);
             },
       onTap: widget.onTap,
-      child: Container(
-        width: widget.width,
-        height: widget.height,
-        decoration: BoxDecoration(
-          // color: !widget.enabled ? Colors.black : widget.color.addLightness(-0.7),
-          gradient: widget.enabled
-              ? LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    widget.color.addLightness(-0.1),
-                    widget.color.addLightness(-0.4),
-                    Colors.black,
-                  ],
-                  stops: [0.0, 0.5, 1.0],
-                )
-              : null,
-          border: Border.all(color: widget.color, width: 2),
-        ),
-        child: Stack(
-          children: [
-            Center(
-              child: (widget.icon != null && !dragging)
-                  ? SvgPicture.asset(
-                      "icons/${widget.icon!}",
-                      height: 36 * widget.iconScale,
-                      colorFilter: ColorFilter.mode(
-                        widget.color2,
-                        BlendMode.srcIn,
+      child: Opacity(
+        opacity: widget.muted ? 0.2 : 1.0,
+        child: Container(
+          width: widget.width,
+          height: widget.height,
+          decoration: BoxDecoration(
+            // color: !widget.enabled ? Colors.black : widget.color.addLightness(-0.7),
+            gradient: widget.enabled
+                ? LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      widget.color.addLightness(-0.1),
+                      widget.color.addLightness(-0.3),
+                      Colors.black,
+                    ],
+                    stops: [0.0, 0.5, 1.0],
+                  )
+                : null,
+            border: Border.all(color: widget.enabled ? widget.color : widget.color.addLightness(-0.3), width: 2),
+          ),
+          child: Stack(
+            children: [
+              Center(
+                child: (widget.icon != null && !dragging)
+                    ? SvgPicture.asset(
+                        "icons/${widget.icon!}",
+                        height: 36 * widget.iconScale,
+                        colorFilter: ColorFilter.mode(
+                          widget.color2,
+                          BlendMode.srcIn,
+                        ),
+                      )
+                    : Text(
+                        widget.volume ?? "",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: widget.color2,
+                        ),
                       ),
-                    )
-                  : Text(
-                      widget.volume ?? "",
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: widget.color2,
-                      ),
-                    ),
-            ),
-            if (widget.rawVolume != null && widget.enabled) ...[
-              Positioned(
-                bottom: 0,
-                right: 0,
-                left: 0,
-                height: 5,
-                child: Row(spacing: 1, children: [
-                  for (int i = 0; i < 20; i++)
-                    Expanded(
-                      child: Container(
-                          color: (widget.rawVolume! < 0)
-                              ? ((19 - i) * -0.5) > widget.rawVolume!
-                                  ? Colors.red
-                                  : null
-                              : ((i) * 0.5) < widget.rawVolume!
-                                  ? Colors.green
-                                  : null),
-                    )
-                ]),
               ),
-            ]
-          ],
+              if (widget.rawVolume != null && widget.enabled) ...[
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  left: 0,
+                  height: 5,
+                  child: Row(spacing: 1, children: [
+                    for (int i = 0; i < 20; i++)
+                      Expanded(
+                        child: Container(
+                            color: (widget.rawVolume! < 0)
+                                ? ((19 - i) * -0.5) > widget.rawVolume!
+                                    ? Colors.red
+                                    : null
+                                : ((i) * 0.5) < widget.rawVolume!
+                                    ? Colors.green
+                                    : null),
+                      )
+                  ]),
+                ),
+              ]
+            ],
+          ),
         ),
       ),
     );
@@ -403,6 +408,7 @@ class InputRow extends StatelessWidget {
             color: rowcolor,
             color2: o.color,
             enabled: enO[o.id]!.enabled,
+            muted: o.muted,
             volume: (enO[o.id] is MixerInputSource)
                 ? (enO[o.id] as MixerInputSource).level == -144.0 ? "-∞" : (enO[o.id] as MixerInputSource).level.toStringAsFixed(1)
                 : null,
@@ -446,9 +452,7 @@ class InputRow extends StatelessWidget {
         fxs = [ ];
     }
 
-    return Row(
-    spacing: 20,
-    children: [
+    return Row(spacing: 20, children: [
       SizedBox(
         width: 200,
         child: Row(
@@ -461,7 +465,7 @@ class InputRow extends StatelessWidget {
                 child: Center(
                   child: SvgPicture.asset(
                     "icons/$rowicon",
-                    height: 30 * iconScale,
+                    height: 40 * iconScale,
                     colorFilter: ColorFilter.mode(
                       rowcolor,
                       BlendMode.srcIn,
@@ -474,7 +478,7 @@ class InputRow extends StatelessWidget {
               child: Text(
                 rowname,
                 style: TextStyle(
-                  fontSize: input is MixerInput ? 15 : 24,
+                  fontSize: input is MixerInput ? 20 : 25,
                   fontWeight: FontWeight.bold,
                   color: rowcolor,
                 ),
@@ -484,137 +488,16 @@ class InputRow extends StatelessWidget {
           ],
         ),
       ),
-      Expanded(child:
-        Row(spacing: 5,
-        children: outs),
+      Expanded(
+        child: Row(spacing: 5, children: outs),
       ),
       SizedBox(
         width: 200,
         child: Row(
-        spacing: 0,
+          spacing: 0,
           children: fxs,
         ),
       ),
     ]);
   }
 }
-
-// class OutputRow extends StatelessWidget {
-//   const OutputRow({super.key, required this.output, required this.mixer});
-//
-//   final Mixer mixer;
-//   final MixerOutput output;
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     double pct = (((output.level == -144.0 ? -90.0 : output.level) + 90.0) / 100.0).clamp(0.0, 1.0);
-//
-//     final rowicon =    output.icon;
-//     final iconScale =  output.iconScale ?? 1.0;
-//     final rowname =    output.name;
-//     final rowcolor =   output.color;
-//
-//     final boxes = [
-//       for (final fsrc in output.sources.whereType<MixerFxSource>())
-//         OutBox(
-//           name: "FX${fsrc.name}",
-//           color: fsrc.color,
-//           enabled: fsrc.enabled,
-//           onTap: () { fsrc.toggleEnabled(mixer); },
-//         ),
-//     ];
-//     final mute = OutBox(
-//       name: output.muted ? "Muted" : "Mute",
-//       color: HexColor.fromHex("#ff4040"),
-//       enabled: output.muted,
-//       onTap: () {
-//         output.toggleMute(mixer);
-//       },
-//     );
-//
-//     return Row(spacing: 2, children: [
-//       if (rowicon != null)
-//         Padding(
-//           padding: EdgeInsets.only(left: 8, right: 8, top: 2, bottom: 2),
-//           child: SizedBox(
-//             width: 30,
-//             height: 30,
-//             child: Center(
-//               child: SvgPicture.asset(
-//                 "icons/$rowicon",
-//                 height: 30 * iconScale,
-//                 colorFilter: ColorFilter.mode(
-//                   rowcolor,
-//                   BlendMode.srcIn,
-//                 ),
-//               ),
-//             ),
-//           ),
-//         ),
-//       Expanded(
-//         child: Text(
-//           rowname,
-//           style: TextStyle(
-//             fontSize: 15,
-//             fontWeight: FontWeight.bold,
-//             color: rowcolor,
-//           ),
-//           textAlign: TextAlign.left,
-//         ),
-//       ),
-//       Row(spacing: 2, children: boxes),
-//       SizedBox(width: 4),
-//       SizedBox(
-//         width: 400,
-//         child: GestureDetector(
-//           behavior: HitTestBehavior.opaque,
-//           onPanUpdate: (details) {
-//             output.changeLevel(by: details.delta.dx / 40.0, mixer: mixer);
-//           },
-//           child: SizedBox(
-//             height: 30,
-//             child: LayoutBuilder(builder: (BuildContext context, BoxConstraints constraints) {
-//               return Stack(alignment: Alignment.centerLeft, children: [
-//                 Positioned(
-//                   top: 0,
-//                   bottom: 0,
-//                   left: 0,
-//                   right: 0,
-//                   child: Container(
-//                     decoration: BoxDecoration(
-//                       border: Border.all(
-//                         color: output.color,
-//                         width: 1,
-//                       ),
-//                     ),
-//                   ),
-//                 ),
-//                 Positioned(
-//                   top: 1,
-//                   bottom: 1,
-//                   left: 1,
-//                   right: 1 + ((constraints.maxWidth - 4) * (1.0 - pct)),
-//                   child: Container(
-//                     color: output.color.addLightness(-0.2),
-//                   ),
-//                 ),
-//                 Padding(
-//                   padding: EdgeInsets.only(left: 12),
-//                   child: Text(
-//                     "${output.level == -144.0 ? "-∞" : output.level.toStringAsFixed(1)} dB",
-//                     style: const TextStyle(
-//                       fontSize: 14,
-//                       fontWeight: FontWeight.bold,
-//                     ),
-//                   ),
-//                 ),
-//               ]);
-//             }),
-//           ),
-//         ),
-//       ),
-//       SizedBox(width: 4),
-//       mute,
-//     ]);
-//   }
-// }

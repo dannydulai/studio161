@@ -96,7 +96,7 @@
         {
             "id": "cablewhite",
             "name": "White Cable",
-            "color": "#ffffff",
+            "color": "#dddddd",
             "icon": "cable.svg",
             "iconScale": 0.9,
             "channel": 3
