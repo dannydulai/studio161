@@ -159,6 +159,14 @@
             "icon": "ableton.svg",
             "iconScale": 2.0,
             "channel": 12
+        },
+        {
+            "id": "push",
+            "name": "Push",
+            "color": "#ff4f00",
+            "icon": "ableton.svg",
+            "iconScale": 2.0,
+            "channel": 13
         }
     ]
 }
