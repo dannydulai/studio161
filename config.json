@@ -72,7 +72,7 @@
         {
             "id": "cablepurple",
             "name": "Purple Cable",
-            "color": "#ff20ff",
+            "color": "#aa40aa",
             "icon": "cable.svg",
             "iconScale": 0.9,
             "channel": 2
@@ -162,11 +162,19 @@
         },
         {
             "id": "push",
-            "name": "Push",
-            "color": "#ff4f00",
+            "name": "Push 3",
+            "color": "#dd00d0",
             "icon": "ableton.svg",
             "iconScale": 2.0,
             "channel": 13
+        },
+        {
+            "id": "haken",
+            "name": "Haken",
+            "color": "#ff004f",
+            "icon": "piano.svg",
+            "iconScale": 2.0,
+            "channel": 14
         }
     ]
 }

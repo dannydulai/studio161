@@ -69,13 +69,13 @@ class Mixer extends ChangeNotifier {
     console = WingConsole.connect(null);
     connecting = false;
     if (console == null) {
-      // print("failed to connect");
+      print("failed to connect");
       connected = false;
       signal();
       return;
     }
 
-    // print("connected");
+    print("connected");
     connected = true;
     signal();
 

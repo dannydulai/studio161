@@ -401,7 +401,7 @@ class InputRow extends StatelessWidget {
         Expanded(
           child: OutBox(
             width: 120,
-            height: 70,
+            height: 62,
             icon: o.icon,
             iconScale: o.iconScale ?? 1.0,
             name: o.name,
